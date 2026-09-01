@@ -138,7 +138,7 @@ tr:hover td{background:#fafafa}
     <button class="btn" onclick="mesProximo()" id="btn-prox" style="padding:5px 12px;font-size:16px">›</button>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
-    <input type="month" id="mes-picker" style="height:32px;font-size:13px;padding:0 8px;border:1px solid #ddd;border-radius:8px;color:#1a1a1a" />
+    <input type="month" id="mes-picker" style="height:32px;font-size:13px;padding:0 8px;border:1px solid #ddd;border-radius:8px;color:#1a1a1a" onchange="irParaMes(this.value)" />
     <button class="btn btn-b" onclick="irHoje()" style="padding:5px 12px;font-size:12px">Hoje</button>
   </div>
 </div>
@@ -237,6 +237,7 @@ tr:hover td{background:#fafafa}
     <div class="stab active" onclick="showStab('cartoes',0)">Cadastrar</div>
     <div class="stab" onclick="showStab('cartoes',1)">Lançar débito</div>
     <div class="stab" onclick="showStab('cartoes',2)">Faturas</div>
+    <div class="stab" onclick="showStab('cartoes',3)">Todos os lançamentos</div>
   </div>
   <div id="cc-sub0">
     <div class="card">
@@ -265,6 +266,22 @@ tr:hover td{background:#fafafa}
     <div class="card"><div class="stitle">Débitos</div><div id="tab-debitos"><div class="empty">Nenhum débito.</div></div></div>
   </div>
   <div id="cc-sub2" style="display:none"><div id="painel-fat"><div class="empty">Nenhum cartão.</div></div></div>
+  <div id="cc-sub3" style="display:none">
+    <div class="card">
+      <div class="stitle">Filtros do histórico completo</div>
+      <div class="row">
+        <input type="search" id="hist-busca" placeholder="Buscar pela descrição" oninput="renderTodosDebitos()" />
+        <select id="hist-cc" onchange="renderTodosDebitos()"><option value="">Todos os cartões</option></select>
+        <select id="hist-cat" onchange="renderTodosDebitos()"><option value="">Todas as categorias</option></select>
+      </div>
+      <div class="row">
+        <div style="flex:1;min-width:150px"><div style="font-size:11px;color:#888;margin-bottom:4px">Fatura inicial</div><input type="month" id="hist-inicio" style="width:100%" onchange="renderTodosDebitos()" /></div>
+        <div style="flex:1;min-width:150px"><div style="font-size:11px;color:#888;margin-bottom:4px">Fatura final</div><input type="month" id="hist-fim" style="width:100%" onchange="renderTodosDebitos()" /></div>
+        <button class="btn" onclick="limparFiltrosDebitos()" style="align-self:flex-end">Limpar filtros</button>
+      </div>
+    </div>
+    <div class="card"><div class="stitle">Todos os lançamentos e parcelas</div><div id="tab-todos-debitos"><div class="empty">Nenhum débito.</div></div></div>
+  </div>
 </div>
 
 <!-- METAS -->
@@ -306,7 +323,7 @@ tr:hover td{background:#fafafa}
       <div style="flex:1;min-width:220px;background:#f7f7f7;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px">
         <div style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📊 Indexado ao CDI</div>
         <div style="display:flex;gap:6px;align-items:center">
-          <input type="number" id="i-pct-cdi" placeholder="% do CDI (ex: 100)" min="0" max="200" step="0.1" style="flex:1;height:34px;font-size:13px;padding:0 10px;border:1px solid #ddd;border-radius:8px" />
+          <input type="number" id="i-pct-cdi" placeholder="% do CDI (ex: 100)" min="0" max="200" step="0.1" style="flex:1;height:34px;font-size:13px;padding:0 10px;border:1px solid #ddd;border-radius:8px" oninput="calcTaxaCDI()" />
           <span style="font-size:13px;color:#888;white-space:nowrap">% do CDI</span>
           <button class="btn btn-b" onclick="preencherSelic()" title="Buscar CDI/Selic atual" style="padding:7px 10px;font-size:12px;white-space:nowrap">📡 CDI</button>
         </div>
@@ -348,15 +365,21 @@ tr:hover td{background:#fafafa}
 <div id="exportar" class="panel">
   <div class="card">
     <div class="stitle">Exportar dados do Akaccount</div>
-    <p style="font-size:13px;color:#888;margin-bottom:16px">Baixe seus dados em CSV — abre no Excel ou Google Sheets.</p>
+    <p style="font-size:13px;color:#888;margin-bottom:16px">Baixe planilhas em CSV ou crie um backup completo que pode ser restaurado no Akaccount.</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
       <button class="btn btn-g" onclick="exportCSV('lancamentos')" style="padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:20px">📋</span><span>Lançamentos</span></button>
       <button class="btn btn-g" onclick="exportCSV('cartoes')" style="padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:20px">💳</span><span>Débitos cartão</span></button>
       <button class="btn btn-g" onclick="exportCSV('metas')" style="padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:20px">⭐</span><span>Metas</span></button>
       <button class="btn btn-g" onclick="exportCSV('investimentos')" style="padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:20px">📉</span><span>Investimentos</span></button>
       <button class="btn btn-g" onclick="exportCSV('dividas')" style="padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:20px">⚠️</span><span>Dívidas</span></button>
-      <button class="btn btn-b" onclick="exportCSV('tudo')" style="padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:20px">💾</span><span>Exportar tudo</span></button>
+      <button class="btn btn-b" onclick="exportBackup()" style="padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:20px">💾</span><span>Backup completo</span></button>
     </div>
+  </div>
+  <div class="card">
+    <div class="stitle">Restaurar backup</div>
+    <p style="font-size:13px;color:#888;margin-bottom:12px">Selecione um arquivo <b>.json</b> gerado pelo próprio Akaccount. Os dados atuais só serão substituídos após sua confirmação.</p>
+    <input type="file" id="backup-file" accept="application/json,.json" style="display:none" onchange="importBackup(this.files[0]);this.value=''" />
+    <button class="btn btn-a" onclick="document.getElementById('backup-file').click()">↥ Importar backup</button>
   </div>
   <div class="card">
     <div class="stitle">Como importar no Google Sheets</div>
@@ -434,6 +457,7 @@ async function loadData(){
       cartoes      = d.cartoes      || [];
       debitos      = d.debitos      || [];
       objetivos    = d.objetivos    || [];
+      sanitizeCollections();
       return true;
     }
   }catch(e){ console.error('Erro ao carregar:',e); }
@@ -446,12 +470,7 @@ function initApp(){
   document.getElementById('l-data').value=hoje;
   document.getElementById('db-data').value=hoje;
   document.getElementById('i-aplic').value=hoje;
-
-  // event listeners globais (necessário com type="module")
-  document.getElementById('l-tipo').addEventListener('change', updateLancCatSel);
-  document.getElementById('mes-picker').addEventListener('change', e=>irParaMes(e.target.value));
-  document.getElementById('i-pct-cdi').addEventListener('input', calcTaxaCDI);
-
+  document.getElementById('l-tipo').addEventListener('change',updateLancCatSel);
   updateLancCatSel(); updateDbCatSel();
   renderAll(); updateResumo();
 }
@@ -491,8 +510,16 @@ const CAT_DEFAULTS=[
 let cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,objetivos;
 let chartEvolucao=null;
 const fmt=v=>'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+// Impede que textos digitados sejam interpretados como HTML ao renderizar as tabelas.
+const cleanText=v=>String(v??'').replace(/[<>\u0000-\u001F]/g,'').trim().slice(0,160);
 const tabNames=['resumo','lancamentos','orcamento','grafico','objetivos','cartoes','metas','investimentos','dividas','exportar'];
 function initEmpty(){cats=CAT_DEFAULTS.map(c=>({...c}));lancamentos=[];metas=[];investimentos=[];dividas=[];cartoes=[];debitos=[];objetivos=[];}
+function sanitizeCollections(){
+  const fields=(arr,names)=>arr.forEach(item=>names.forEach(name=>{if(typeof item?.[name]==='string')item[name]=cleanText(item[name]);}));
+  fields(cats,['nome']);fields(lancamentos,['desc','cat']);fields(metas,['nome']);
+  fields(investimentos,['nome','tipo']);fields(dividas,['nome']);fields(cartoes,['nome']);
+  fields(debitos,['desc','cat']);fields(objetivos,['nome']);
+}
 
 function loadDemo(){
   if(!confirm('Substituir dados atuais pelos dados de exemplo?'))return;
@@ -586,6 +613,18 @@ function irHoje(){mesSel=mesAtualYM();atualizarNavMes();renderTudo();}
 
 // filtra qualquer array com campo 'data' pelo mês selecionado
 function doMes(arr){return arr.filter(x=>x.data&&x.data.startsWith(mesSel));}
+function addMonths(dateStr,offset){
+  const [y,m,d]=dateStr.split('-').map(Number),dt=new Date(y,m-1+offset,1);
+  const last=new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate();
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(Math.min(d,last)).padStart(2,'0')}`;
+}
+function parcelasDoDebito(d,debitoIdx){
+  const qtd=Math.max(1,parseInt(d.parc)||1),total=Math.round(Number(d.valor||0)*100);
+  const base=Math.floor(total/qtd),resto=total-base*qtd;
+  return Array.from({length:qtd},(_,i)=>({...d,debitoIdx,numParcela:i+1,dataParcela:addMonths(d.data,i),valorParc:(base+(i===qtd-1?resto:0))/100}));
+}
+function todasParcelas(){return debitos.flatMap((d,i)=>parcelasDoDebito(d,i));}
+function parcelasNoMes(ym=mesSel){return todasParcelas().filter(p=>p.dataParcela.startsWith(ym));}
 
 function renderTudo(){
   const tab=document.querySelector('.tab.active');
@@ -598,8 +637,14 @@ function renderTudo(){
 
 
 
-function clearAll(){if(!confirm('Apagar todos os dados?'))return;initEmpty();saveData();renderAll();updateResumo();}
-function renderAll(){renderLanc();renderOrcCats();renderListaCats();renderListaCC();renderDebitosTab();renderFaturas();renderMetas();renderInvest();renderDiv();renderObjetivos();updateLancCatSel();updateCCSel();updateDbCatSel();}
+function clearAll(){
+  if(!currentUser)return;
+  if(prompt('Esta ação apaga todos os dados. Digite APAGAR para confirmar:')!=='APAGAR')return;
+  exportBackup('akaccount_backup_antes_de_apagar.json');
+  initEmpty();saveData();renderAll();updateResumo();
+  alert('Dados apagados. Um backup foi baixado antes da exclusão.');
+}
+function renderAll(){renderLanc();renderOrcCats();renderListaCats();renderListaCC();renderDebitosTab();renderFaturas();renderTodosDebitos();renderMetas();renderInvest();renderDiv();renderObjetivos();updateLancCatSel();updateCCSel();updateDbCatSel();}
 
 function showTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -617,7 +662,7 @@ function showStab(parent,idx){
   const p=document.getElementById(parent);
   p.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));
   p.querySelectorAll('.stab')[idx].classList.add('active');
-  const map={orcamento:['orc-sub0','orc-sub1'],cartoes:['cc-sub0','cc-sub1','cc-sub2']};
+  const map={orcamento:['orc-sub0','orc-sub1'],cartoes:['cc-sub0','cc-sub1','cc-sub2','cc-sub3']};
   map[parent].forEach((id,i)=>{document.getElementById(id).style.display=i===idx?'':'none';});
   if(parent==='orcamento'&&idx===0){renderOrcCats();renderAlertas('alertas-orc');}
   if(parent==='orcamento'&&idx===1)renderListaCats();
@@ -662,7 +707,7 @@ function catChip(nome,extra=''){
 function gastoPorCat(){
   const g={};
   doMes(lancamentos).filter(l=>l.tipo==='despesa').forEach(l=>{g[l.cat]=(g[l.cat]||0)+l.valor;});
-  doMes(debitos).forEach(d=>{g[d.cat]=(g[d.cat]||0)+d.valorParc;});
+  parcelasNoMes().forEach(d=>{g[d.cat]=(g[d.cat]||0)+d.valorParc;});
   return g;
 }
 
@@ -673,7 +718,7 @@ function renderAlertas(elId){
   el.innerHTML=alerts.map(a=>a.t==='r'?`<div class="alert-banner">⚠️ <span>${a.msg}</span></div>`:`<div class="warn-banner">⚡ <span>${a.msg}</span></div>`).join('');
 }
 
-function calcMensal(){const m={};const add=(data,tipo,val)=>{const ym=data.substring(0,7);if(!m[ym])m[ym]={rec:0,desp:0};tipo==='receita'?m[ym].rec+=val:m[ym].desp+=val;};lancamentos.forEach(l=>add(l.data,l.tipo,l.valor));debitos.forEach(d=>add(d.data,'despesa',d.valorParc));return m;}
+function calcMensal(){const m={};const add=(data,tipo,val)=>{const ym=data.substring(0,7);if(!m[ym])m[ym]={rec:0,desp:0};tipo==='receita'?m[ym].rec+=val:m[ym].desp+=val;};lancamentos.forEach(l=>add(l.data,l.tipo,l.valor));todasParcelas().forEach(d=>add(d.dataParcela,'despesa',d.valorParc));return m;}
 
 function renderGrafico(){
   const meses=calcMensal(),keys=Object.keys(meses).sort();
@@ -687,7 +732,7 @@ function renderGrafico(){
 }
 
 function addObj(){
-  const nome=document.getElementById('obj-nome').value.trim(),val=parseFloat(document.getElementById('obj-val').value)||0,entrada=parseFloat(document.getElementById('obj-entrada').value)||0,aporte=parseFloat(document.getElementById('obj-aporte').value)||0,jurosAA=parseFloat(document.getElementById('obj-juros').value)||0;
+  const nome=cleanText(document.getElementById('obj-nome').value),val=parseFloat(document.getElementById('obj-val').value)||0,entrada=parseFloat(document.getElementById('obj-entrada').value)||0,aporte=parseFloat(document.getElementById('obj-aporte').value)||0,jurosAA=parseFloat(document.getElementById('obj-juros').value)||0;
   if(!nome||val<=0||aporte<=0)return;
   const jm=jurosAA>0?Math.pow(1+jurosAA/100,1/12)-1:0;let s=entrada,m=0;
   if(val-entrada<=0){m=0;}else if(jm===0){m=Math.ceil((val-entrada)/aporte);}else{while(s<val&&m<600){s=s*(1+jm)+aporte;m++;}if(m>=600)m=null;}
@@ -709,7 +754,7 @@ function renderObjetivos(){
 }
 
 function updateResumo(){
-  const lm=doMes(lancamentos),dm=doMes(debitos);
+  const lm=doMes(lancamentos),dm=parcelasNoMes();
   const rec=lm.filter(l=>l.tipo==='receita').reduce((a,l)=>a+l.valor,0);
   const desp=lm.filter(l=>l.tipo==='despesa').reduce((a,l)=>a+l.valor,0);
   const fat=dm.reduce((a,d)=>a+d.valorParc,0);
@@ -769,43 +814,19 @@ function renderListaCats(){
       <td style="font-weight:500;white-space:normal">${catChip(c.nome)}</td>
       <td><span class="badge ${c.tipo==='receita'?'bg':'br'}">${c.tipo}</span></td>
       <td><input type="number" value="${c.orc||''}" placeholder="R$ —" min="0" step="0.01"
-        data-idx="${i}"
-        style="width:120px;height:30px;font-size:13px;padding:0 8px;border:1px solid #ddd;border-radius:6px" /></td>
-      <td><button class="btn btn-r" data-del="${i}">🗑</button></td>
+        style="width:120px;height:30px;font-size:13px;padding:0 8px;border:1px solid #ddd;border-radius:6px"
+        onchange="cats[${i}].orc=parseFloat(this.value)||0;saveData();renderOrcCats();renderAlertas('alertas-orc');updateResumo()" /></td>
+      <td><button class="btn btn-r" onclick="cats.splice(${i},1);saveData();renderListaCats();updateLancCatSel()">🗑</button></td>
     </tr>`).join('')+'</tbody></table></div>';
-
-  // event listeners via JS (evita problema de escopo com type="module")
-  el.querySelectorAll('input[data-idx]').forEach(input=>{
-    const i=parseInt(input.dataset.idx);
-    input.addEventListener('input',()=>{
-      cats[i].orc=parseFloat(input.value)||0;
-      renderOrcCats();renderAlertas('alertas-orc');updateResumo();
-      clearTimeout(orcTimer);
-      orcTimer=setTimeout(()=>saveData(),1000);
-    });
-    input.addEventListener('blur',()=>{
-      cats[i].orc=parseFloat(input.value)||0;
-      saveData();renderOrcCats();renderAlertas('alertas-orc');updateResumo();
-    });
-  });
-
-  el.querySelectorAll('button[data-del]').forEach(btn=>{
-    const i=parseInt(btn.dataset.del);
-    btn.addEventListener('click',()=>{
-      cats.splice(i,1);saveData();renderListaCats();updateLancCatSel();
-    });
-  });
 }
-
-let orcTimer=null;
-function addCat(){const nome=document.getElementById('nc-nome').value.trim(),tipo=document.getElementById('nc-tipo').value,orc=parseFloat(document.getElementById('nc-orc').value)||0;if(!nome)return;if(cats.some(c=>c.nome.toLowerCase()===nome.toLowerCase())){alert('Categoria já existe.');return;}cats.push({nome,tipo,orc});document.getElementById('nc-nome').value='';document.getElementById('nc-orc').value='';saveData();renderListaCats();updateLancCatSel();}
+function addCat(){const nome=cleanText(document.getElementById('nc-nome').value),tipo=document.getElementById('nc-tipo').value,orc=parseFloat(document.getElementById('nc-orc').value)||0;if(!nome)return;if(cats.some(c=>c.nome.toLowerCase()===nome.toLowerCase())){alert('Categoria já existe.');return;}cats.push({nome,tipo,orc});document.getElementById('nc-nome').value='';document.getElementById('nc-orc').value='';saveData();renderListaCats();updateLancCatSel();}
 
 function getCatNames(tipo){return cats.filter(c=>!tipo||c.tipo===tipo).map(c=>c.nome);}
 function updateLancCatSel(){const t=document.getElementById('l-tipo').value,sel=document.getElementById('l-cat'),prev=sel.value;sel.innerHTML=getCatNames(t).map(n=>`<option>${n}</option>`).join('');if([...sel.options].some(o=>o.value===prev))sel.value=prev;}
 function updateDbCatSel(){document.getElementById('db-cat').innerHTML=cats.filter(c=>c.tipo==='despesa').map(c=>`<option>${c.nome}</option>`).join('');}
 function updateCCSel(){const sel=document.getElementById('db-cc');sel.innerHTML=cartoes.length?cartoes.map((c,i)=>`<option value="${i}">${c.nome}</option>`).join(''):'<option>Cadastre um cartão</option>';}
 
-function addLanc(){const tipo=document.getElementById('l-tipo').value,desc=document.getElementById('l-desc').value.trim(),cat=document.getElementById('l-cat').value,val=parseFloat(document.getElementById('l-val').value),data=document.getElementById('l-data').value||new Date().toISOString().split('T')[0];if(!desc||isNaN(val)||val<=0)return;lancamentos.unshift({tipo,desc,cat,valor:val,data});document.getElementById('l-desc').value='';document.getElementById('l-val').value='';saveData();renderLanc();updateResumo();}
+function addLanc(){const tipo=document.getElementById('l-tipo').value,desc=cleanText(document.getElementById('l-desc').value),cat=cleanText(document.getElementById('l-cat').value),val=parseFloat(document.getElementById('l-val').value),data=document.getElementById('l-data').value||new Date().toISOString().split('T')[0];if(!desc||isNaN(val)||val<=0)return;lancamentos.unshift({tipo,desc,cat,valor:val,data});document.getElementById('l-desc').value='';document.getElementById('l-val').value='';saveData();renderLanc();updateResumo();}
 function delLanc(i){lancamentos.splice(i,1);saveData();renderLanc();updateResumo();}
 function renderLanc(){
   const el=document.getElementById('tab-lanc');
@@ -822,14 +843,14 @@ function renderLanc(){
     </tr>`;}).join('')+'</tbody></table></div>';
 }
 
-function addCartao(){const nome=document.getElementById('cc-nome').value.trim(),lim=parseFloat(document.getElementById('cc-lim').value)||0,venc=parseInt(document.getElementById('cc-venc').value)||1;if(!nome)return;cartoes.push({nome,lim,venc});document.getElementById('cc-nome').value='';document.getElementById('cc-lim').value='';document.getElementById('cc-venc').value='';saveData();renderListaCC();updateCCSel();}
+function addCartao(){const nome=cleanText(document.getElementById('cc-nome').value),lim=parseFloat(document.getElementById('cc-lim').value)||0,venc=Math.min(31,Math.max(1,parseInt(document.getElementById('cc-venc').value)||1));if(!nome)return;cartoes.push({nome,lim,venc});document.getElementById('cc-nome').value='';document.getElementById('cc-lim').value='';document.getElementById('cc-venc').value='';saveData();renderListaCC();updateCCSel();}
 function delCartao(i){debitos=debitos.filter(d=>d.ccIdx!==i);debitos.forEach(d=>{if(d.ccIdx>i)d.ccIdx--;});cartoes.splice(i,1);saveData();renderListaCC();updateCCSel();renderFaturas();updateResumo();}
-function renderListaCC(){const el=document.getElementById('lista-cc');if(!cartoes.length){el.innerHTML='<div class="empty">Nenhum cartão.</div>';return;}el.innerHTML=cartoes.map((c,i)=>{const fat=debitos.filter(d=>d.ccIdx===i).reduce((a,d)=>a+d.valorParc,0),pct=c.lim>0?Math.min(100,Math.round(fat/c.lim*100)):0,col=pct>80?'#E24B4A':pct>50?'#EF9F27':'#1D9E75';return`<div class="card" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap"><div style="flex:1;min-width:160px"><div style="font-weight:500;margin-bottom:4px">💳 ${c.nome}</div><div style="font-size:12px;color:#888">Vence dia ${c.venc} | Limite: ${fmt(c.lim)}</div><div class="pbar" style="margin-top:8px"><div class="pfill" style="width:${pct}%;background:${col}"></div></div><div style="font-size:12px;color:#888;margin-top:3px">Fatura: <b style="color:${col}">${fmt(fat)}</b> (${pct}%)</div></div><button class="btn btn-r" onclick="delCartao(${i})">🗑</button></div>`;}).join('');}
-function addDebito(){const ci=parseInt(document.getElementById('db-cc').value),desc=document.getElementById('db-desc').value.trim(),cat=document.getElementById('db-cat').value,val=parseFloat(document.getElementById('db-val').value),parc=parseInt(document.getElementById('db-parc').value)||1,data=document.getElementById('db-data').value||new Date().toISOString().split('T')[0];if(isNaN(ci)||!desc||isNaN(val)||val<=0)return;debitos.unshift({ccIdx:ci,desc,cat,valor:val,parc,valorParc:val/parc,data});document.getElementById('db-desc').value='';document.getElementById('db-val').value='';document.getElementById('db-parc').value='1';saveData();renderDebitosTab();renderFaturas();renderListaCC();updateResumo();}
+function renderListaCC(){const el=document.getElementById('lista-cc');if(!cartoes.length){el.innerHTML='<div class="empty">Nenhum cartão.</div>';return;}const pm=parcelasNoMes();el.innerHTML=cartoes.map((c,i)=>{const fat=pm.filter(d=>d.ccIdx===i).reduce((a,d)=>a+d.valorParc,0),pct=c.lim>0?Math.min(100,Math.round(fat/c.lim*100)):0,col=pct>80?'#E24B4A':pct>50?'#EF9F27':'#1D9E75';return`<div class="card" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap"><div style="flex:1;min-width:160px"><div style="font-weight:500;margin-bottom:4px">💳 ${c.nome}</div><div style="font-size:12px;color:#888">Vence dia ${c.venc} | Limite: ${fmt(c.lim)}</div><div class="pbar" style="margin-top:8px"><div class="pfill" style="width:${pct}%;background:${col}"></div></div><div style="font-size:12px;color:#888;margin-top:3px">Fatura de ${mesSel}: <b style="color:${col}">${fmt(fat)}</b> (${pct}%)</div></div><button class="btn btn-r" onclick="delCartao(${i})">🗑</button></div>`;}).join('');}
+function addDebito(){const ci=parseInt(document.getElementById('db-cc').value),desc=cleanText(document.getElementById('db-desc').value),cat=cleanText(document.getElementById('db-cat').value),val=parseFloat(document.getElementById('db-val').value),parc=Math.max(1,parseInt(document.getElementById('db-parc').value)||1),data=document.getElementById('db-data').value||new Date().toISOString().split('T')[0];if(isNaN(ci)||!cartoes[ci]||!desc||isNaN(val)||val<=0)return;debitos.unshift({ccIdx:ci,desc,cat,valor:Math.round(val*100)/100,parc,valorParc:Math.floor((val/parc)*100)/100,data});document.getElementById('db-desc').value='';document.getElementById('db-val').value='';document.getElementById('db-parc').value='1';saveData();renderDebitosTab();renderFaturas();renderListaCC();updateResumo();}
 function delDebito(i){debitos.splice(i,1);saveData();renderDebitosTab();renderFaturas();renderListaCC();updateResumo();}
 function renderDebitosTab(){
   const el=document.getElementById('tab-debitos');
-  const dm=doMes(debitos);
+  const dm=debitos.filter(d=>d.data&&d.data.startsWith(mesSel));
   if(!dm.length){el.innerHTML=`<div class="empty">Nenhum débito em ${mesSel}.</div>`;return;}
   el.innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>Data</th><th>Cartão</th><th>Descrição</th><th>Cat.</th><th>Total</th><th>Parc.</th><th>/mês</th><th></th></tr></thead><tbody>'
     +dm.map((d)=>{const i=debitos.indexOf(d);return`<tr>
@@ -846,7 +867,7 @@ function renderDebitosTab(){
 function renderFaturas(){
   const el=document.getElementById('painel-fat');
   if(!cartoes.length){el.innerHTML='<div class="empty">Nenhum cartão.</div>';return;}
-  const dm=doMes(debitos);
+  const dm=parcelasNoMes();
   el.innerHTML=cartoes.map((c,i)=>{
     const ds=dm.filter(d=>d.ccIdx===i);
     const total=ds.reduce((a,d)=>a+d.valorParc,0);
@@ -854,7 +875,7 @@ function renderFaturas(){
     const col=pct>80?'#E24B4A':pct>50?'#EF9F27':'#1D9E75';
     const rows=ds.length
       ?'<div style="overflow-x:auto"><table><thead><tr><th>Data</th><th>Descrição</th><th>Cat.</th><th>Total</th><th>Parc.</th><th>Esta fatura</th></tr></thead><tbody>'
-        +ds.map(d=>`<tr><td>${d.data.split('-').reverse().join('/')}</td><td style="white-space:normal">${d.desc}</td><td>${catChip(d.cat)}</td><td>${fmt(d.valor)}</td><td>${d.parc}x</td><td style="color:#A32D2D;font-weight:500">${fmt(d.valorParc)}</td></tr>`).join('')
+        +ds.map(d=>`<tr><td>${d.dataParcela.split('-').reverse().join('/')}</td><td style="white-space:normal">${d.desc}</td><td>${catChip(d.cat)}</td><td>${fmt(d.valor)}</td><td>${d.numParcela}/${d.parc}</td><td style="color:#A32D2D;font-weight:500">${fmt(d.valorParc)}</td></tr>`).join('')
         +`</tbody></table></div><div style="text-align:right;padding-top:10px;border-top:1px solid #f0f0f0;margin-top:8px;font-size:13px">Total: <b style="color:#A32D2D">${fmt(total)}</b></div>`
       :`<div class="empty" style="padding:.75rem">Sem débitos em ${mesSel}.</div>`;
     return`<div class="card">
@@ -871,7 +892,51 @@ function renderFaturas(){
   }).join('');
 }
 
-function addMeta(){const nome=document.getElementById('m-nome').value.trim(),total=parseFloat(document.getElementById('m-total').value),atual=parseFloat(document.getElementById('m-atual').value)||0;if(!nome||isNaN(total)||total<=0)return;metas.push({nome,total,atual});document.getElementById('m-nome').value='';document.getElementById('m-total').value='';document.getElementById('m-atual').value='';saveData();renderMetas();}
+function renderTodosDebitos(){
+  const el=document.getElementById('tab-todos-debitos');if(!el)return;
+  const selCC=document.getElementById('hist-cc'),selCat=document.getElementById('hist-cat');
+  const ccAtual=selCC.value,catAtual=selCat.value;
+  selCC.innerHTML='<option value="">Todos os cartões</option>'+cartoes.map((c,i)=>`<option value="${i}">${c.nome}</option>`).join('');
+  selCat.innerHTML='<option value="">Todas as categorias</option>'+cats.filter(c=>c.tipo==='despesa').map(c=>`<option>${c.nome}</option>`).join('');
+  if([...selCC.options].some(o=>o.value===ccAtual))selCC.value=ccAtual;
+  if([...selCat.options].some(o=>o.value===catAtual))selCat.value=catAtual;
+
+  const busca=cleanText(document.getElementById('hist-busca').value).toLocaleLowerCase('pt-BR');
+  const cc=selCC.value,cat=selCat.value,inicio=document.getElementById('hist-inicio').value,fim=document.getElementById('hist-fim').value;
+  const lista=todasParcelas().filter(p=>{
+    const ym=p.dataParcela.slice(0,7);
+    return(!busca||p.desc.toLocaleLowerCase('pt-BR').includes(busca))&&
+      (cc===''||p.ccIdx===Number(cc))&&(!cat||p.cat===cat)&&
+      (!inicio||ym>=inicio)&&(!fim||ym<=fim);
+  }).sort((a,b)=>b.dataParcela.localeCompare(a.dataParcela)||b.debitoIdx-a.debitoIdx);
+
+  if(!lista.length){el.innerHTML='<div class="empty">Nenhum lançamento encontrado com esses filtros.</div>';return;}
+  const total=lista.reduce((s,p)=>s+p.valorParc,0),compras=new Set(lista.map(p=>p.debitoIdx)).size;
+  el.innerHTML=`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+      <span class="badge bb">${lista.length} parcela${lista.length!==1?'s':''}</span>
+      <span class="badge bp">${compras} compra${compras!==1?'s':''}</span>
+      <span class="badge br">Total: ${fmt(total)}</span>
+    </div><div style="overflow-x:auto"><table><thead><tr><th>Fatura</th><th>Data</th><th>Cartão</th><th>Descrição</th><th>Categoria</th><th>Parcela</th><th>Valor</th><th>Total compra</th><th></th></tr></thead><tbody>`+
+    lista.map(p=>`<tr>
+      <td><span class="badge ba">${p.dataParcela.slice(0,7).split('-').reverse().join('/')}</span></td>
+      <td>${p.dataParcela.split('-').reverse().join('/')}</td>
+      <td><span class="badge bp">${cartoes[p.ccIdx]?.nome||'Cartão removido'}</span></td>
+      <td style="white-space:normal">${p.desc}</td><td>${catChip(p.cat)}</td>
+      <td><span class="badge bb">${p.numParcela}/${p.parc}</span></td>
+      <td style="color:#A32D2D;font-weight:600">${fmt(p.valorParc)}</td><td>${fmt(p.valor)}</td>
+      <td><button class="btn btn-r" onclick="removerDebitoHistorico(${p.debitoIdx})" title="Excluir a compra e todas as parcelas">🗑</button></td>
+    </tr>`).join('')+'</tbody></table></div>';
+}
+function limparFiltrosDebitos(){
+  ['hist-busca','hist-inicio','hist-fim'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('hist-cc').value='';document.getElementById('hist-cat').value='';renderTodosDebitos();
+}
+function removerDebitoHistorico(i){
+  if(!debitos[i]||!confirm('Excluir esta compra e todas as parcelas relacionadas?'))return;
+  delDebito(i);renderTodosDebitos();
+}
+
+function addMeta(){const nome=cleanText(document.getElementById('m-nome').value),total=parseFloat(document.getElementById('m-total').value),atual=parseFloat(document.getElementById('m-atual').value)||0;if(!nome||isNaN(total)||total<=0)return;metas.push({nome,total,atual:Math.min(atual,total)});document.getElementById('m-nome').value='';document.getElementById('m-total').value='';document.getElementById('m-atual').value='';saveData();renderMetas();}
 function aporte(i){const v=parseFloat(prompt('Valor do aporte (R$):'));if(!isNaN(v)&&v>0){metas[i].atual=Math.min(metas[i].atual+v,metas[i].total);saveData();renderMetas();}}
 function delMeta(i){metas.splice(i,1);saveData();renderMetas();}
 function renderMetas(){const el=document.getElementById('lista-metas');if(!metas.length){el.innerHTML='<div class="empty">Nenhuma meta.</div>';return;}el.innerHTML=metas.map((m,i)=>{const pct=Math.min(100,Math.round(m.atual/m.total*100));return`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-weight:500">${m.nome}</span><span class="badge ${pct>=100?'bg':'bb'}">${pct}%</span></div><div style="display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:4px"><span>Guardado: <b style="color:#1a1a1a">${fmt(m.atual)}</b></span><span>Meta: <b style="color:#1a1a1a">${fmt(m.total)}</b></span></div><div class="pbar"><div class="pfill" style="width:${pct}%;background:${pct>=100?'#1D9E75':'#378ADD'}"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><span style="font-size:12px;color:#888">Faltam: <b style="color:${m.total-m.atual>0?'#993C1D':'#0F6E56'}">${fmt(Math.max(0,m.total-m.atual))}</b></span><div style="display:flex;gap:6px"><button class="btn" onclick="aporte(${i})">+ Aporte</button><button class="btn btn-r" onclick="delMeta(${i})">🗑</button></div></div></div>`;}).join('');}
@@ -911,7 +976,7 @@ function calcTaxaCDI(){
 }
 
 function addInvest(){
-  const nome=document.getElementById('i-nome').value.trim();
+  const nome=cleanText(document.getElementById('i-nome').value);
   const tipo=document.getElementById('i-tipo').value;
   const val=parseFloat(document.getElementById('i-val').value);
   const ret=parseFloat(document.getElementById('i-ret').value)||0;
@@ -1067,7 +1132,7 @@ function renderInvest(){
 }
 
 
-function addDivida(){const nome=document.getElementById('dv-nome').value.trim(),total=parseFloat(document.getElementById('dv-total').value),parc=parseFloat(document.getElementById('dv-parc').value),nparc=parseInt(document.getElementById('dv-nparc').value);if(!nome||isNaN(total)||isNaN(parc)||isNaN(nparc))return;dividas.push({nome,total,parc,nparc});document.getElementById('dv-nome').value='';document.getElementById('dv-total').value='';document.getElementById('dv-parc').value='';document.getElementById('dv-nparc').value='';saveData();renderDiv();}
+function addDivida(){const nome=cleanText(document.getElementById('dv-nome').value),total=parseFloat(document.getElementById('dv-total').value),parc=parseFloat(document.getElementById('dv-parc').value),nparc=parseInt(document.getElementById('dv-nparc').value);if(!nome||isNaN(total)||total<=0||isNaN(parc)||parc<=0||isNaN(nparc)||nparc<1)return;dividas.push({nome,total,parc,nparc});document.getElementById('dv-nome').value='';document.getElementById('dv-total').value='';document.getElementById('dv-parc').value='';document.getElementById('dv-nparc').value='';saveData();renderDiv();}
 function delDiv(i){dividas.splice(i,1);saveData();renderDiv();}
 function renderDiv(){const el=document.getElementById('lista-div');if(!dividas.length){el.innerHTML='<div class="empty">Nenhuma dívida.</div>';return;}el.innerHTML='<div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Nome</th><th>Total</th><th>Parcela/mês</th><th>Parcelas</th><th>Restante</th><th></th></tr></thead><tbody>'+dividas.map((d,i)=>`<tr><td style="font-weight:500;white-space:normal">${d.nome}</td><td>${fmt(d.total)}</td><td style="color:#A32D2D;font-weight:500">${fmt(d.parc)}</td><td><span class="badge ba">${d.nparc}x</span></td><td style="font-weight:500">${fmt(d.parc*d.nparc)}</td><td><button class="btn btn-r" onclick="delDiv(${i})">🗑</button></td></tr>`).join('')+'</tbody></table></div></div>';document.getElementById('tot-div').textContent=fmt(dividas.reduce((a,d)=>a+d.total,0));document.getElementById('tot-pmes').textContent=fmt(dividas.reduce((a,d)=>a+d.parc,0));}
 
@@ -1081,6 +1146,28 @@ function exportCSV(tipo){
   if(tipo==='dividas'||tipo==='tudo')dl('Nome,Total,Parcela/mês,NºParcelas,Restante\n'+dividas.map(d=>[esc(d.nome),d.total.toFixed(2),d.parc.toFixed(2),d.nparc,(d.parc*d.nparc).toFixed(2)].join(',')).join('\n'),'akaccount_dividas.csv');
 }
 
+function downloadFile(content,nome,type){
+  const blob=new Blob([content],{type}),a=document.createElement('a'),url=URL.createObjectURL(blob);
+  a.href=url;a.download=nome;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function exportBackup(nome){
+  const backup={app:'Akaccount',version:2,exportedAt:new Date().toISOString(),data:{cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,objetivos}};
+  const pad=new Date().toISOString().slice(0,10);
+  downloadFile(JSON.stringify(backup,null,2),nome||`akaccount_backup_${pad}.json`,'application/json;charset=utf-8');
+}
+async function importBackup(file){
+  if(!file)return;
+  try{
+    const parsed=JSON.parse(await file.text()),d=parsed?.data;
+    const names=['cats','lancamentos','metas','investimentos','dividas','cartoes','debitos','objetivos'];
+    if(parsed?.app!=='Akaccount'||!d||!names.every(n=>Array.isArray(d[n])))throw new Error('Arquivo incompatível');
+    if(!confirm('Restaurar este backup? Os dados atuais serão substituídos.'))return;
+    ({cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,objetivos}=d);
+    sanitizeCollections();await saveData();renderTudo();alert('Backup restaurado com sucesso.');
+  }catch(e){alert('Não foi possível importar: '+e.message);}
+}
+
 // INIT — Firebase cuida do login, não inicializa direto
 
 // Expor funções ao escopo global (necessário com type="module")
@@ -1090,12 +1177,12 @@ Object.assign(window,{
   mesAnterior,mesProximo,irParaMes,irHoje,
   addLanc,delLanc,
   addCat,
-  addCartao,delCartao,addDebito,delDebito,
+  addCartao,delCartao,addDebito,delDebito,renderTodosDebitos,limparFiltrosDebitos,removerDebitoHistorico,
   addMeta,aporte,delMeta,
   addInvest,delInvest,preencherSelic,calcTaxaCDI,
   addDivida,delDiv,
   addObj,delObj,
-  exportCSV,
+  exportCSV,exportBackup,importBackup,
   renderOrcCats,renderAlertas,renderGrafico,
 });
 </script>
