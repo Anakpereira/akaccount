@@ -56,6 +56,32 @@ tr:hover td{background:#fafafa}
 .save-ok{font-size:11px;color:#0F6E56;display:flex;align-items:center;gap:4px;opacity:0;transition:opacity .3s}
 .save-ok.show{opacity:1}
 .demo-banner{background:#E6F1FB;border:1px solid #a8c8f0;border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:13px;color:#185FA5;display:flex;align-items:flex-start;gap:8px}
+/* NAVEGAÇÃO RESPONSIVA */
+.side-nav{display:none}.bottom-nav{display:none}.fab{display:none}
+.side-brand{padding:8px 10px 22px;display:flex;align-items:center;gap:10px}
+.side-group{font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.9px;padding:14px 12px 6px}
+.nav-link{display:flex;align-items:center;gap:11px;width:100%;border:0;background:transparent;border-radius:10px;padding:10px 12px;color:#5f6570;font-size:13px;cursor:pointer;text-align:left;margin:2px 0}
+.nav-link:hover{background:#f3f7fb;color:#185FA5}.nav-link.active{background:#E6F1FB;color:#185FA5;font-weight:600}
+.nav-icon{width:22px;text-align:center;font-size:16px}
+.bottom-link{border:0;background:transparent;color:#7a7f87;font-size:10px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 12px;min-width:64px;cursor:pointer}
+.bottom-link span:first-child{font-size:20px;line-height:1}.bottom-link.active{color:#185FA5;font-weight:600}
+.fab{position:fixed;right:22px;bottom:86px;z-index:90;border:0;border-radius:99px;background:#185FA5;color:#fff;padding:13px 18px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(24,95,165,.3);cursor:pointer}
+.fab:hover{background:#124e89;transform:translateY(-1px)}
+.modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.38);z-index:1100;display:none;align-items:flex-end;justify-content:center;padding:16px}
+.modal-backdrop.show{display:flex}.action-sheet{background:#fff;width:min(480px,100%);border-radius:18px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.sheet-title{font-size:17px;font-weight:650}.sheet-close{border:0;background:#f3f4f6;border-radius:99px;width:32px;height:32px;cursor:pointer;color:#666}
+.action-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.action-item{border:1px solid #e5e7eb;background:#fff;border-radius:12px;padding:15px 10px;cursor:pointer;text-align:left;font-size:13px;color:#30343b}.action-item:hover{border-color:#a8c8f0;background:#f7fbff}.action-item span{display:block;font-size:22px;margin-bottom:6px}
+@media(min-width:900px){
+  .side-nav{display:flex;position:fixed;z-index:100;left:0;top:0;bottom:0;width:224px;background:#fff;border-right:1px solid #e8edf2;padding:16px 12px;flex-direction:column;overflow-y:auto}
+  .app{max-width:1180px;margin-left:224px;margin-right:auto;padding:1.25rem 2rem}.tabs{display:none}.topbar-left{display:none}.fab{display:block;bottom:28px}
+  .modal-backdrop{align-items:center}.action-sheet{padding:22px}.topbar{justify-content:flex-end}
+}
+@media(max-width:899px){
+  body{padding-bottom:74px}.app{padding:.7rem}.tabs{display:none}.bottom-nav{display:flex;position:fixed;z-index:100;left:0;right:0;bottom:0;height:66px;background:#fff;border-top:1px solid #e5e7eb;justify-content:space-around;align-items:center;padding-bottom:env(safe-area-inset-bottom)}.fab{display:block}
+  .topbar{padding-top:.4rem}.topbar .btn-a,.topbar .btn-r{font-size:0;padding:7px}.topbar .btn-a::first-letter,.topbar .btn-r::first-letter{font-size:15px}
+  .mgrid{grid-template-columns:repeat(2,1fr)}.metric{padding:.75rem}.mval{font-size:17px}.card{padding:.9rem}.action-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:480px){.logo{font-size:19px}.logo-sub{font-size:11px}.mgrid{gap:7px}.fab{right:16px}.row input,.row select{min-width:140px}}
 /* LOGIN */
 #login-screen{position:fixed;inset:0;background:#f5f5f5;display:flex;align-items:center;justify-content:center;z-index:1000}
 .login-box{background:#fff;border-radius:20px;padding:2.5rem 2rem;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.10);text-align:center}
@@ -95,6 +121,24 @@ tr:hover td{background:#fafafa}
 
 <!-- APP (oculto até login) -->
 <div id="app-content" style="display:none">
+<aside class="side-nav" aria-label="Menu principal">
+  <div class="side-brand"><div class="icon-box">💰</div><div><div class="logo">Ak<span>account</span></div><div class="logo-sub">Controle financeiro</div></div></div>
+  <div class="side-group">Visão geral</div>
+  <button class="nav-link active" data-tab="resumo" onclick="showTab('resumo')"><span class="nav-icon">▦</span>Resumo</button>
+  <button class="nav-link" data-tab="grafico" onclick="showTab('grafico')"><span class="nav-icon">↗</span>Evolução</button>
+  <div class="side-group">Movimentações</div>
+  <button class="nav-link" data-tab="lancamentos" onclick="showTab('lancamentos')"><span class="nav-icon">≡</span>Lançamentos</button>
+  <button class="nav-link" data-tab="cartoes" onclick="showTab('cartoes')"><span class="nav-icon">▰</span>Cartões</button>
+  <div class="side-group">Planejamento</div>
+  <button class="nav-link" data-tab="orcamento" onclick="showTab('orcamento')"><span class="nav-icon">◎</span>Orçamento</button>
+  <button class="nav-link" data-tab="objetivos" onclick="showTab('objetivos')"><span class="nav-icon">◇</span>Objetivos</button>
+  <button class="nav-link" data-tab="metas" onclick="showTab('metas')"><span class="nav-icon">☆</span>Metas</button>
+  <div class="side-group">Patrimônio</div>
+  <button class="nav-link" data-tab="investimentos" onclick="showTab('investimentos')"><span class="nav-icon">◔</span>Investimentos</button>
+  <button class="nav-link" data-tab="dividas" onclick="showTab('dividas')"><span class="nav-icon">!</span>Dívidas</button>
+  <div style="flex:1"></div>
+  <button class="nav-link" data-tab="exportar" onclick="showTab('exportar')"><span class="nav-icon">⇩</span>Exportar e backup</button>
+</aside>
 <div class="app">
 
 <div class="topbar">
@@ -394,6 +438,38 @@ tr:hover td{background:#fafafa}
 
 </div><!-- /app -->
 
+<button class="fab" onclick="abrirAcoesRapidas()" aria-label="Adicionar novo lançamento">＋ Novo</button>
+<nav class="bottom-nav" aria-label="Navegação móvel">
+  <button class="bottom-link active" data-tab="resumo" onclick="showTab('resumo')"><span>⌂</span><span>Início</span></button>
+  <button class="bottom-link" data-tab="lancamentos" onclick="showTab('lancamentos')"><span>≡</span><span>Lançamentos</span></button>
+  <button class="bottom-link" data-tab="cartoes" onclick="showTab('cartoes')"><span>▰</span><span>Cartões</span></button>
+  <button class="bottom-link" onclick="abrirMais()"><span>•••</span><span>Mais</span></button>
+</nav>
+
+<div class="modal-backdrop" id="quick-modal" onclick="if(event.target===this)fecharModal('quick-modal')">
+  <div class="action-sheet" role="dialog" aria-modal="true" aria-labelledby="quick-title">
+    <div class="sheet-head"><div class="sheet-title" id="quick-title">Adicionar novo</div><button class="sheet-close" onclick="fecharModal('quick-modal')" aria-label="Fechar">×</button></div>
+    <div class="action-grid">
+      <button class="action-item" onclick="atalhoNovo('receita')"><span>↗️</span>Nova receita</button>
+      <button class="action-item" onclick="atalhoNovo('despesa')"><span>↘️</span>Nova despesa</button>
+      <button class="action-item" onclick="atalhoNovo('cartao')"><span>💳</span>Compra no cartão</button>
+      <button class="action-item" onclick="atalhoNovo('investimento')"><span>📈</span>Novo investimento</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="more-modal" onclick="if(event.target===this)fecharModal('more-modal')">
+  <div class="action-sheet" role="dialog" aria-modal="true" aria-labelledby="more-title">
+    <div class="sheet-head"><div class="sheet-title" id="more-title">Mais opções</div><button class="sheet-close" onclick="fecharModal('more-modal')" aria-label="Fechar">×</button></div>
+    <div class="action-grid">
+      <button class="action-item" onclick="irMenu('orcamento')"><span>🎯</span>Orçamento</button><button class="action-item" onclick="irMenu('grafico')"><span>📊</span>Evolução</button>
+      <button class="action-item" onclick="irMenu('objetivos')"><span>🚀</span>Objetivos</button><button class="action-item" onclick="irMenu('metas')"><span>⭐</span>Metas</button>
+      <button class="action-item" onclick="irMenu('investimentos')"><span>📈</span>Investimentos</button><button class="action-item" onclick="irMenu('dividas')"><span>⚠️</span>Dívidas</button>
+      <button class="action-item" onclick="irMenu('exportar')"><span>💾</span>Exportar e backup</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script type="module">
 // ── FIREBASE ──────────────────────────────────────────────────
@@ -651,6 +727,8 @@ function showTab(name){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab')[tabNames.indexOf(name)].classList.add('active');
   document.getElementById(name).classList.add('active');
+  document.querySelectorAll('[data-tab]').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  window.scrollTo({top:0,behavior:'smooth'});
   if(name==='resumo')updateResumo();
   if(name==='orcamento'){renderOrcCats();renderAlertas('alertas-orc');}
   if(name==='grafico')renderGrafico();
@@ -658,6 +736,22 @@ function showTab(name){
   if(name==='lancamentos')updateLancCatSel();
   if(name==='investimentos')renderAlertasInvest();
 }
+function abrirAcoesRapidas(){document.getElementById('quick-modal').classList.add('show');document.body.style.overflow='hidden';}
+function abrirMais(){document.getElementById('more-modal').classList.add('show');document.body.style.overflow='hidden';}
+function fecharModal(id){document.getElementById(id).classList.remove('show');document.body.style.overflow='';}
+function irMenu(name){fecharModal('more-modal');showTab(name);}
+function atalhoNovo(tipo){
+  fecharModal('quick-modal');
+  if(tipo==='receita'||tipo==='despesa'){
+    showTab('lancamentos');document.getElementById('l-tipo').value=tipo;updateLancCatSel();
+    setTimeout(()=>document.getElementById('l-desc').focus(),100);return;
+  }
+  if(tipo==='cartao'){
+    showTab('cartoes');showStab('cartoes',1);setTimeout(()=>document.getElementById('db-desc').focus(),100);return;
+  }
+  showTab('investimentos');setTimeout(()=>document.getElementById('i-nome').focus(),100);
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){fecharModal('quick-modal');fecharModal('more-modal');}});
 function showStab(parent,idx){
   const p=document.getElementById(parent);
   p.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));
@@ -668,6 +762,7 @@ function showStab(parent,idx){
   if(parent==='orcamento'&&idx===1)renderListaCats();
   if(parent==='cartoes'&&idx===2)renderFaturas();
   if(parent==='cartoes'&&idx===1){updateCCSel();updateDbCatSel();renderDebitosTab();}
+  if(parent==='cartoes'&&idx===3)renderTodosDebitos();
 }
 
 const CAT_META={
@@ -1173,7 +1268,7 @@ async function importBackup(file){
 // Expor funções ao escopo global (necessário com type="module")
 Object.assign(window,{
   loginGoogle,logout,loadDemo,clearAll,
-  showTab,showStab,
+  showTab,showStab,abrirAcoesRapidas,abrirMais,fecharModal,irMenu,atalhoNovo,
   mesAnterior,mesProximo,irParaMes,irHoje,
   addLanc,delLanc,
   addCat,
