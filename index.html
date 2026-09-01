@@ -56,6 +56,7 @@ tr:hover td{background:#fafafa}
 .obj-card{border:1px solid #e8e8e8;border-radius:12px;padding:1rem 1.25rem;margin-bottom:10px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .save-ok{font-size:11px;color:#0F6E56;display:flex;align-items:center;gap:4px;opacity:0;transition:opacity .3s}
 .save-ok.show{opacity:1}
+.save-ok.saving{color:var(--primary)}.save-ok.error{color:var(--danger);opacity:1;max-width:210px;line-height:1.2}
 .demo-banner{background:var(--primary-soft);border:1px solid #b9d0fb;border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:13px;color:var(--primary);display:flex;align-items:flex-start;gap:8px}
 /* NAVEGAÇÃO RESPONSIVA */
 .side-nav{display:none}.bottom-nav{display:none}.fab{display:none}
@@ -497,6 +498,8 @@ const auth   = getAuth(fbApp);
 const db     = getFirestore(fbApp);
 let currentUser = null;
 let saveTimer   = null;
+let saveChain   = Promise.resolve();
+let saveVersion = 0;
 
 async function loginGoogle(){
   try{
@@ -510,37 +513,49 @@ async function logout(){
   await signOut(auth);
 }
 
-async function saveData(){
-  if(!currentUser) return;
-  try{
-    await setDoc(doc(db,'usuarios',currentUser.uid),
-      {cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,objetivos,
-       updatedAt:new Date().toISOString()});
-    const el=document.getElementById('save-ok');
-    el.classList.add('show');
-    clearTimeout(saveTimer);
-    saveTimer=setTimeout(()=>el.classList.remove('show'),2000);
-  }catch(e){ console.error('Erro ao salvar:',e); }
+function dataPayload(){return{cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,objetivos,updatedAt:new Date().toISOString()};}
+function localKey(){return currentUser?'akaccount_data_'+currentUser.uid:null;}
+function saveLocal(payload){try{const key=localKey();if(key)localStorage.setItem(key,JSON.stringify(payload));return true;}catch(e){console.error('Erro no backup local:',e);return false;}}
+function readLocal(){try{const raw=localStorage.getItem(localKey());return raw?JSON.parse(raw):null;}catch(e){console.error('Erro ao ler backup local:',e);return null;}}
+function applyData(d){
+  cats=d.cats||CAT_DEFAULTS.map(c=>({...c}));lancamentos=d.lancamentos||[];metas=d.metas||[];
+  investimentos=d.investimentos||[];dividas=d.dividas||[];cartoes=d.cartoes||[];
+  debitos=d.debitos||[];objetivos=d.objetivos||[];sanitizeCollections();
+}
+function saveData(){
+  if(!currentUser)return Promise.resolve(false);
+  const payload=dataPayload(),uid=currentUser.uid,version=++saveVersion,el=document.getElementById('save-ok');
+  const localOk=saveLocal(payload);
+  el.textContent=localOk?'● Salvando na nuvem...':'⚠ Falha ao salvar';
+  el.className='save-ok show '+(localOk?'saving':'error');
+  saveChain=saveChain.then(async()=>{
+    try{
+      await setDoc(doc(db,'usuarios',uid),payload);
+      if(version===saveVersion){el.textContent='✓ Salvo';el.className='save-ok show';clearTimeout(saveTimer);saveTimer=setTimeout(()=>el.classList.remove('show'),2500);}
+      return true;
+    }catch(e){
+      console.error('Erro ao salvar na nuvem:',e);
+      if(version===saveVersion){el.textContent=localOk?'⚠ Salvo neste dispositivo; nuvem pendente':'⚠ Não foi possível salvar';el.className='save-ok error';}
+      return localOk;
+    }
+  });
+  return saveChain;
 }
 
 async function loadData(){
   if(!currentUser) return false;
+  const local=readLocal();
   try{
     const snap=await getDoc(doc(db,'usuarios',currentUser.uid));
     if(snap.exists()){
-      const d=snap.data();
-      cats         = d.cats         || CAT_DEFAULTS.map(c=>({...c}));
-      lancamentos  = d.lancamentos  || [];
-      metas        = d.metas        || [];
-      investimentos= d.investimentos|| [];
-      dividas      = d.dividas      || [];
-      cartoes      = d.cartoes      || [];
-      debitos      = d.debitos      || [];
-      objetivos    = d.objetivos    || [];
-      sanitizeCollections();
+      const cloud=snap.data();
+      const useLocal=local&&String(local.updatedAt||'')>String(cloud.updatedAt||'');
+      applyData(useLocal?local:cloud);saveLocal(useLocal?local:cloud);
+      if(useLocal)setTimeout(()=>saveData(),0);
       return true;
     }
-  }catch(e){ console.error('Erro ao carregar:',e); }
+  }catch(e){ console.error('Erro ao carregar da nuvem:',e); }
+  if(local){applyData(local);return true;}
   return false;
 }
 
