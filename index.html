@@ -156,6 +156,7 @@ tr:hover td{background:#fafafa}
   </div>
   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
     <span class="save-ok" id="save-ok">✓ Salvo</span>
+    <button class="btn btn-b" onclick="syncNow()" title="Enviar os dados atuais para a nuvem">↻ Sincronizar</button>
     <div id="user-info" style="display:flex;align-items:center;gap:8px">
       <img id="user-photo" src="" alt="" style="width:28px;height:28px;border-radius:50%;display:none" />
       <span id="user-name" style="font-size:13px;color:#666"></span>
@@ -514,9 +515,10 @@ async function logout(){
 }
 
 function dataPayload(){return{cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,objetivos,updatedAt:new Date().toISOString()};}
-function localKey(){return currentUser?'akaccount_data_'+currentUser.uid:null;}
-function saveLocal(payload){try{const key=localKey();if(key)localStorage.setItem(key,JSON.stringify(payload));return true;}catch(e){console.error('Erro no backup local:',e);return false;}}
-function readLocal(){try{const raw=localStorage.getItem(localKey());return raw?JSON.parse(raw):null;}catch(e){console.error('Erro ao ler backup local:',e);return null;}}
+// Usado somente para migrar dados gravados pela versão anterior.
+function legacyLocalKey(){return currentUser?'akaccount_data_'+currentUser.uid:null;}
+function readLegacyLocal(){try{const raw=localStorage.getItem(legacyLocalKey());return raw?JSON.parse(raw):null;}catch(e){return null;}}
+function clearLegacyLocal(){try{const key=legacyLocalKey();if(key)localStorage.removeItem(key);}catch(e){}}
 function applyData(d){
   cats=d.cats||CAT_DEFAULTS.map(c=>({...c}));lancamentos=d.lancamentos||[];metas=d.metas||[];
   investimentos=d.investimentos||[];dividas=d.dividas||[];cartoes=d.cartoes||[];
@@ -525,37 +527,40 @@ function applyData(d){
 function saveData(){
   if(!currentUser)return Promise.resolve(false);
   const payload=dataPayload(),uid=currentUser.uid,version=++saveVersion,el=document.getElementById('save-ok');
-  const localOk=saveLocal(payload);
-  el.textContent=localOk?'● Salvando na nuvem...':'⚠ Falha ao salvar';
-  el.className='save-ok show '+(localOk?'saving':'error');
+  el.textContent='● Salvando na nuvem...';el.className='save-ok show saving';
   saveChain=saveChain.then(async()=>{
     try{
       await setDoc(doc(db,'usuarios',uid),payload);
-      if(version===saveVersion){el.textContent='✓ Salvo';el.className='save-ok show';clearTimeout(saveTimer);saveTimer=setTimeout(()=>el.classList.remove('show'),2500);}
+      clearLegacyLocal();
+      if(version===saveVersion){el.textContent='✓ Sincronizado';el.className='save-ok show';clearTimeout(saveTimer);saveTimer=setTimeout(()=>el.classList.remove('show'),2500);}
       return true;
     }catch(e){
       console.error('Erro ao salvar na nuvem:',e);
-      if(version===saveVersion){el.textContent=localOk?'⚠ Salvo neste dispositivo; nuvem pendente':'⚠ Não foi possível salvar';el.className='save-ok error';}
-      return localOk;
+      if(version===saveVersion){el.textContent='⚠ Não sincronizado — não atualize a página';el.className='save-ok error';}
+      return false;
     }
   });
   return saveChain;
 }
+async function syncNow(){const ok=await saveData();if(ok)alert('Dados sincronizados com sucesso. Agora você pode acessá-los em outros dispositivos.');else alert('Não foi possível sincronizar. Verifique as regras do Firestore e sua conexão.');}
 
 async function loadData(){
   if(!currentUser) return false;
-  const local=readLocal();
+  const legacy=readLegacyLocal();
   try{
     const snap=await getDoc(doc(db,'usuarios',currentUser.uid));
     if(snap.exists()){
       const cloud=snap.data();
-      const useLocal=local&&String(local.updatedAt||'')>String(cloud.updatedAt||'');
-      applyData(useLocal?local:cloud);saveLocal(useLocal?local:cloud);
-      if(useLocal)setTimeout(()=>saveData(),0);
+      const migrateLegacy=legacy&&String(legacy.updatedAt||'')>String(cloud.updatedAt||'');
+      applyData(migrateLegacy?legacy:cloud);
+      if(migrateLegacy){const migrated=await saveData();if(!migrated)alert('Os dados antigos estão visíveis, mas ainda não foi possível enviá-los à nuvem. Não limpe os dados deste navegador.');}
+      else clearLegacyLocal();
       return true;
     }
+    if(legacy){applyData(legacy);const migrated=await saveData();if(!migrated)alert('Não foi possível migrar seus dados para a nuvem. Não limpe os dados deste navegador.');return true;}
   }catch(e){ console.error('Erro ao carregar da nuvem:',e); }
-  if(local){applyData(local);return true;}
+  if(legacy){applyData(legacy);alert('O Firebase está indisponível. Seus dados antigos foram preservados neste navegador, mas ainda não estão sincronizados.');return true;}
+  alert('Não foi possível carregar seus dados do Firebase. Verifique a conexão e as regras do Firestore antes de cadastrar novos valores.');
   return false;
 }
 
@@ -1286,7 +1291,7 @@ async function importBackup(file){
 
 // Expor funções ao escopo global (necessário com type="module")
 Object.assign(window,{
-  loginGoogle,logout,loadDemo,clearAll,
+  loginGoogle,logout,loadDemo,clearAll,syncNow,
   showTab,showStab,abrirAcoesRapidas,abrirMais,fecharModal,irMenu,atalhoNovo,
   mesAnterior,mesProximo,irParaMes,irHoje,
   addLanc,delLanc,
