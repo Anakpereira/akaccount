@@ -973,17 +973,25 @@ function renderListaCats(){
       <td><span class="badge ${c.tipo==='receita'?'bg':'br'}">${c.tipo}</span></td>
       <td><input type="number" value="${c.orc||''}" placeholder="R$ —" min="0" step="0.01"
         style="width:120px;height:30px;font-size:13px;padding:0 8px;border:1px solid #ddd;border-radius:6px"
-        onchange="atualizarOrcamento(${i},this.value)" /></td>
+        inputmode="decimal" onchange="atualizarOrcamento(${i},this)" /></td>
       <td><button class="btn btn-r" onclick="delCat(${i})">🗑</button></td>
     </tr>`).join('')+'</tbody></table></div>';
 }
-async function atualizarOrcamento(i,valor){
+function valorMonetarioEmCentavos(valor){
+  const texto=String(valor??'').trim();if(!texto)return 0;
+  let normalizado=texto;
+  if(texto.includes(','))normalizado=texto.replace(/\./g,'').replace(',','.');
+  const numero=Number(normalizado);
+  return Number.isFinite(numero)?Math.max(0,Math.round(numero*100)):0;
+}
+async function atualizarOrcamento(i,campo){
   if(!cats[i])return;
-  const numero=parseFloat(String(valor).replace(',','.'))||0;
-  cats[i].orc=Math.max(0,Math.round(numero*100)/100);
+  const centavos=valorMonetarioEmCentavos(campo.value);
+  cats[i].orc=centavos/100;
+  campo.value=(centavos/100).toFixed(2);
   renderOrcCats();renderAlertas('alertas-orc');updateResumo();
   const ok=await saveData();
-  if(ok)toast(`✓ Orçamento de ${cats[i].nome} salvo.`);else toast('Não foi possível salvar o orçamento.','error');
+  if(ok)toast(`✓ Orçamento de ${cats[i].nome} salvo em ${fmt(cats[i].orc)}.`);else toast('Não foi possível salvar o orçamento.','error');
 }
 function delCat(i){
   if(!cats[i]||!confirm(`Excluir a categoria "${cats[i].nome}"?`))return;
