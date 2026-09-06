@@ -756,7 +756,8 @@ function addMonths(dateStr,offset){
 function parcelasDoDebito(d,debitoIdx){
   const qtd=Math.max(1,parseInt(d.parc)||1),total=Math.round(Number(d.valor||0)*100);
   const base=Math.floor(total/qtd),resto=total-base*qtd;
-  return Array.from({length:qtd},(_,i)=>({...d,debitoIdx,numParcela:i+1,dataParcela:addMonths(d.data,i),valorParc:(base+(i===qtd-1?resto:0))/100}));
+  // A primeira parcela vence no mês seguinte ao lançamento da compra.
+  return Array.from({length:qtd},(_,i)=>({...d,debitoIdx,numParcela:i+1,dataParcela:addMonths(d.data,i+1),valorParc:(base+(i===qtd-1?resto:0))/100}));
 }
 function todasParcelas(){return debitos.flatMap((d,i)=>parcelasDoDebito(d,i));}
 function parcelasNoMes(ym=mesSel){return todasParcelas().filter(p=>p.dataParcela.startsWith(ym));}
