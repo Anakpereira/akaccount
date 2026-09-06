@@ -7,7 +7,7 @@
 <style>
 :root{--primary:#2563EB;--primary-dark:#1E3A5F;--primary-soft:#EAF2FF;--positive:#16A085;--positive-soft:#E8F7F2;--danger:#DC4C4C;--danger-soft:#FDECEC;--warning:#D98E04;--warning-soft:#FFF6DE;--purple:#6D5BD0;--teal:#0F8B8D;--surface:#FFFFFF;--page:#F6F8FB;--text:#1F2937;--muted:#6B7280;--border:#E5EAF0}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:var(--text);background:var(--page);min-height:100vh}
+body{font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:var(--text);background:linear-gradient(180deg,#F8FAFD 0,#F4F7FB 100%);min-height:100vh}
 .app{max-width:900px;margin:0 auto;padding:1rem}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:.75rem 0 1rem;flex-wrap:wrap}
 .topbar-left{display:flex;align-items:center;gap:10px}
@@ -20,11 +20,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .tab.active{background:#fff;color:#1a1a1a;font-weight:500}
 .tab:hover:not(.active){background:#e8e8e8}
 .panel{display:none;padding:1.25rem 0}.panel.active{display:block}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:12px;box-shadow:0 3px 12px rgba(30,58,95,.045)}
+.card{background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:16px;padding:1.1rem 1.25rem;margin-bottom:14px;box-shadow:0 5px 18px rgba(30,58,95,.055)}
 .mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1rem}
-.metric{background:#fff;border-radius:10px;padding:.9rem 1rem;border:1px solid var(--border);box-shadow:0 2px 8px rgba(30,58,95,.035)}
+.metric{background:#fff;border-radius:14px;padding:1rem;border:1px solid var(--border);box-shadow:0 4px 14px rgba(30,58,95,.045)}
 .mlabel{font-size:12px;color:var(--muted);margin-bottom:4px}
 .mval{font-size:20px;font-weight:600}
+.metric-trend{font-size:11px;color:var(--muted);margin-top:7px;min-height:15px}.trend-up{color:var(--positive)}.trend-down{color:var(--danger)}
+.dashboard-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);gap:14px}.dashboard-grid>.card{margin-bottom:0}
+.form-card{border-top:3px solid var(--primary);background:linear-gradient(180deg,#fff 0,#FBFDFF 100%)}
+.invoice-details{border-top:1px solid var(--border);margin-top:10px;padding-top:2px}.invoice-details summary{cursor:pointer;list-style:none;padding:11px 2px;color:var(--primary);font-weight:600}.invoice-details summary::-webkit-details-marker{display:none}.invoice-details summary::after{content:'⌄';float:right;font-size:18px;transition:transform .2s}.invoice-details[open] summary::after{transform:rotate(180deg)}
+.toast{position:fixed;right:24px;top:24px;z-index:2000;max-width:360px;background:#172033;color:#fff;padding:12px 16px;border-radius:12px;box-shadow:0 14px 40px rgba(15,23,42,.25);opacity:0;transform:translateY(-12px);pointer-events:none;transition:.22s}.toast.show{opacity:1;transform:none}.toast.ok{background:#0F766E}.toast.error{background:#B42318}
 .g{color:var(--positive)}.r{color:var(--danger)}.b{color:var(--primary)}.a{color:var(--warning)}.p{color:var(--purple)}
 .row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
 .row input,.row select{flex:1;min-width:90px;height:36px;font-size:13px;padding:0 10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a}
@@ -84,9 +89,9 @@ tr:hover td{background:#fafafa}
 @media(max-width:899px){
   body{padding-bottom:74px}.app{padding:.7rem}.tabs{display:none}.bottom-nav{display:flex;position:fixed;z-index:100;left:0;right:0;bottom:0;height:66px;background:#fff;border-top:1px solid #e5e7eb;justify-content:space-around;align-items:center;padding-bottom:env(safe-area-inset-bottom)}.fab{display:block}
   .topbar{padding-top:.4rem}.topbar .btn-a,.topbar .btn-r{font-size:0;padding:7px}.topbar .btn-a::first-letter,.topbar .btn-r::first-letter{font-size:15px}
-  .mgrid{grid-template-columns:repeat(2,1fr)}.metric{padding:.75rem}.mval{font-size:17px}.card{padding:.9rem}.action-grid{grid-template-columns:repeat(2,1fr)}
+  .mgrid{grid-template-columns:repeat(2,1fr)}.metric{padding:.8rem}.mval{font-size:18px}.card{padding:1rem}.action-grid{grid-template-columns:repeat(2,1fr)}.dashboard-grid{grid-template-columns:1fr}.toast{left:14px;right:14px;top:14px;max-width:none}
 }
-@media(max-width:480px){.logo{font-size:19px}.logo-sub{font-size:11px}.mgrid{gap:7px}.fab{right:16px}.row input,.row select{min-width:140px}}
+@media(max-width:480px){.logo{font-size:19px}.logo-sub{font-size:11px}.mgrid{gap:8px}.mgrid .metric:last-child{grid-column:1/-1}.fab{right:16px}.row input,.row select{min-width:140px}th,td{padding:9px 7px}.card{border-radius:14px}.invoice-details table{min-width:620px}}
 /* LOGIN */
 #login-screen{position:fixed;inset:0;background:linear-gradient(145deg,#F8FAFD 0%,#EAF2FF 100%);display:flex;align-items:center;justify-content:center;z-index:1000}
 .login-box{background:#fff;border:1px solid rgba(255,255,255,.8);border-radius:20px;padding:2.5rem 2rem;max-width:380px;width:90%;box-shadow:0 18px 50px rgba(30,58,95,.13);text-align:center}
@@ -102,6 +107,7 @@ tr:hover td{background:#fafafa}
 </style>
 </head>
 <body>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 <!-- LOADING -->
 <div id="loading-screen">
   <div class="spinner"></div>
@@ -197,19 +203,21 @@ tr:hover td{background:#fafafa}
 <div id="resumo" class="panel active">
   <div id="alertas-topo"></div>
   <div class="mgrid">
-    <div class="metric"><div class="mlabel">Receita total</div><div class="mval g" id="sr">R$ 0</div></div>
-    <div class="metric"><div class="mlabel">Despesas</div><div class="mval r" id="sd">R$ 0</div></div>
-    <div class="metric"><div class="mlabel">Faturas cartão</div><div class="mval r" id="sf">R$ 0</div></div>
-    <div class="metric"><div class="mlabel">Saldo livre</div><div class="mval b" id="ss">R$ 0</div></div>
-    <div class="metric"><div class="mlabel">Em investimentos</div><div class="mval a" id="si">R$ 0</div></div>
+    <div class="metric"><div class="mlabel">Receita total</div><div class="mval g" id="sr">R$ 0</div><div class="metric-trend" id="tr-receita"></div></div>
+    <div class="metric"><div class="mlabel">Despesas</div><div class="mval r" id="sd">R$ 0</div><div class="metric-trend" id="tr-despesa"></div></div>
+    <div class="metric"><div class="mlabel">Faturas cartão</div><div class="mval r" id="sf">R$ 0</div><div class="metric-trend" id="tr-fatura"></div></div>
+    <div class="metric"><div class="mlabel">Saldo livre</div><div class="mval b" id="ss">R$ 0</div><div class="metric-trend" id="tr-saldo"></div></div>
+    <div class="metric"><div class="mlabel">Em investimentos</div><div class="mval a" id="si">R$ 0</div><div class="metric-trend">Patrimônio acumulado</div></div>
   </div>
-  <div class="card"><div class="stitle">Orçamento vs. gasto</div><div id="resumo-orc"><div class="empty">Configure orçamentos na aba Orçamento.</div></div></div>
-  <div class="card"><div class="stitle">Últimos lançamentos</div><div id="ult-lanc"><div class="empty">Nenhum lançamento ainda.</div></div></div>
+  <div class="dashboard-grid">
+    <div class="card"><div class="stitle">Orçamento vs. gasto</div><div id="resumo-orc"><div class="empty">Configure orçamentos na aba Orçamento.</div></div></div>
+    <div class="card"><div class="stitle">Últimos lançamentos</div><div id="ult-lanc"><div class="empty">Nenhum lançamento ainda.</div></div></div>
+  </div>
 </div>
 
 <!-- LANÇAMENTOS -->
 <div id="lancamentos" class="panel">
-  <div class="card">
+  <div class="card form-card">
     <div class="stitle">Novo lançamento</div>
     <div class="row">
       <select id="l-tipo"><option value="receita">Receita</option><option value="despesa">Despesa</option></select>
@@ -222,7 +230,7 @@ tr:hover td{background:#fafafa}
       <button class="btn" onclick="addLanc()">+ Adicionar</button>
     </div>
   </div>
-  <div class="card">
+  <div class="card form-card">
     <div class="stitle">Lançamentos recorrentes</div>
     <div class="row">
       <select id="rec-tipo" onchange="updateRecCatSel()"><option value="despesa">Despesa</option><option value="receita">Receita</option></select>
@@ -442,7 +450,7 @@ tr:hover td{background:#fafafa}
       <button class="btn btn-b" onclick="exportBackup()" style="padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:20px">💾</span><span>Backup completo</span></button>
     </div>
   </div>
-  <div class="card">
+  <div class="card form-card">
     <div class="stitle">Restaurar backup</div>
     <p style="font-size:13px;color:#888;margin-bottom:12px">Selecione um arquivo <b>.json</b> gerado pelo próprio Akaccount. Os dados atuais só serão substituídos após sua confirmação.</p>
     <input type="file" id="backup-file" accept="application/json,.json" style="display:none" onchange="importBackup(this.files[0]);this.value=''" />
@@ -518,6 +526,11 @@ let currentUser = null;
 let saveTimer   = null;
 let saveChain   = Promise.resolve();
 let saveVersion = 0;
+let toastTimer=null;
+function toast(msg,tipo='ok'){
+  const el=document.getElementById('toast');if(!el)return;
+  el.textContent=msg;el.className=`toast ${tipo} show`;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3200);
+}
 
 async function loginGoogle(){
   try{
@@ -559,7 +572,7 @@ function saveData(){
   });
   return saveChain;
 }
-async function syncNow(){const ok=await saveData();if(ok)alert('Dados sincronizados com sucesso. Agora você pode acessá-los em outros dispositivos.');else alert('Não foi possível sincronizar. Verifique as regras do Firestore e sua conexão.');}
+async function syncNow(){const ok=await saveData();if(ok)toast('✓ Dados sincronizados em todos os dispositivos.');else toast('Não foi possível sincronizar. Verifique sua conexão.','error');}
 
 async function loadData(){
   if(!currentUser) return false;
@@ -696,6 +709,7 @@ function loadDemo(){
 let mesSel=''; // 'YYYY-MM'
 
 function mesAtualYM(){const h=new Date();return`${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,'0')}`;}
+function mesDeslocado(ym,offset){const[y,m]=ym.split('-').map(Number),d=new Date(y,m-1+offset,1);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;}
 
 function initMes(){
   mesSel=mesAtualYM();
@@ -904,6 +918,10 @@ function updateResumo(){
   document.getElementById('sf').textContent=fmt(fat);
   document.getElementById('ss').textContent=fmt(rec-desp-fat);
   document.getElementById('si').textContent=fmt(inv);
+  const ant=mesDeslocado(mesSel,-1),lmAnt=lancamentos.filter(l=>l.data?.startsWith(ant)),dmAnt=parcelasNoMes(ant);
+  const recAnt=lmAnt.filter(l=>l.tipo==='receita').reduce((a,l)=>a+l.valor,0),despAnt=lmAnt.filter(l=>l.tipo==='despesa').reduce((a,l)=>a+l.valor,0),fatAnt=dmAnt.reduce((a,d)=>a+d.valorParc,0),saldo=rec-desp-fat,saldoAnt=recAnt-despAnt-fatAnt;
+  const tendencia=(id,atual,anterior,melhorAlta=true)=>{const el=document.getElementById(id);if(!el)return;if(!anterior){el.textContent='Sem comparação anterior';el.className='metric-trend';return;}const pct=Math.round((atual-anterior)/Math.abs(anterior)*100),alta=pct>=0,bom=melhorAlta?alta:!alta;el.textContent=`${alta?'↑':'↓'} ${Math.abs(pct)}% em relação ao mês anterior`;el.className=`metric-trend ${bom?'trend-up':'trend-down'}`;};
+  tendencia('tr-receita',rec,recAnt,true);tendencia('tr-despesa',desp,despAnt,false);tendencia('tr-fatura',fat,fatAnt,false);tendencia('tr-saldo',saldo,saldoAnt,true);
   renderAlertas('alertas-topo');
   const g=gastoPorCat(),dc=cats.filter(c=>c.tipo==='despesa'&&c.orc>0);
   document.getElementById('resumo-orc').innerHTML=dc.length?dc.map(c=>{
@@ -1090,9 +1108,9 @@ function renderFaturas(){
       ${sit.status==='fechada'?`<button class="btn" onclick="reabrirFatura(${i})">Reabrir</button>`:''}
     </div>`:'';
     const rows=ds.length
-      ?'<div style="overflow-x:auto"><table><thead><tr><th>Data</th><th>Descrição</th><th>Cat.</th><th>Total</th><th>Parc.</th><th>Esta fatura</th></tr></thead><tbody>'
+      ?`<details class="invoice-details"><summary>Ver ${ds.length} lançamento${ds.length!==1?'s':''} da fatura</summary><div style="overflow-x:auto"><table><thead><tr><th>Data</th><th>Descrição</th><th>Cat.</th><th>Total</th><th>Parc.</th><th>Esta fatura</th></tr></thead><tbody>`
         +ds.map(d=>`<tr><td>${d.dataParcela.split('-').reverse().join('/')}</td><td style="white-space:normal">${d.desc}</td><td>${catChip(d.cat)}</td><td>${fmt(d.valor)}</td><td>${d.numParcela}/${d.parc}</td><td style="color:#A32D2D;font-weight:500">${fmt(d.valorParc)}</td></tr>`).join('')
-        +`</tbody></table></div><div style="text-align:right;padding-top:10px;border-top:1px solid #f0f0f0;margin-top:8px;font-size:13px">Total: <b style="color:#A32D2D">${fmt(total)}</b></div>`
+        +`</tbody></table></div><div style="text-align:right;padding:10px 2px;font-size:13px">Total: <b style="color:#A32D2D">${fmt(total)}</b></div></details>`
       :`<div class="empty" style="padding:.75rem">Sem débitos em ${mesSel}.</div>`;
     return`<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
@@ -1380,7 +1398,7 @@ async function importBackup(file){
     if(parsed?.app!=='Akaccount'||!d||!names.every(n=>Array.isArray(d[n])))throw new Error('Arquivo incompatível');
     if(!confirm('Restaurar este backup? Os dados atuais serão substituídos.'))return;
     ({cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,objetivos}=d);recorrentes=Array.isArray(d.recorrentes)?d.recorrentes:[];faturas=Array.isArray(d.faturas)?d.faturas:[];
-    sanitizeCollections();await saveData();renderTudo();alert('Backup restaurado com sucesso.');
+    sanitizeCollections();await saveData();renderTudo();toast('✓ Backup restaurado com sucesso.');
   }catch(e){alert('Não foi possível importar: '+e.message);}
 }
 
