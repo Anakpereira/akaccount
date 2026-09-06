@@ -514,7 +514,7 @@ async function logout(){
   await signOut(auth);
 }
 
-function dataPayload(){return{cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,objetivos,updatedAt:new Date().toISOString()};}
+function dataPayload(){return{cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,faturas,objetivos,updatedAt:new Date().toISOString()};}
 // Usado somente para migrar dados gravados pela versão anterior.
 function legacyLocalKey(){return currentUser?'akaccount_data_'+currentUser.uid:null;}
 function readLegacyLocal(){try{const raw=localStorage.getItem(legacyLocalKey());return raw?JSON.parse(raw):null;}catch(e){return null;}}
@@ -522,7 +522,7 @@ function clearLegacyLocal(){try{const key=legacyLocalKey();if(key)localStorage.r
 function applyData(d){
   cats=d.cats||CAT_DEFAULTS.map(c=>({...c}));lancamentos=d.lancamentos||[];metas=d.metas||[];
   investimentos=d.investimentos||[];dividas=d.dividas||[];cartoes=d.cartoes||[];
-  debitos=d.debitos||[];objetivos=d.objetivos||[];sanitizeCollections();
+  debitos=d.debitos||[];faturas=d.faturas||[];objetivos=d.objetivos||[];sanitizeCollections();
 }
 function saveData(){
   if(!currentUser)return Promise.resolve(false);
@@ -607,13 +607,13 @@ const CAT_DEFAULTS=[
   {nome:'Pets',tipo:'despesa',orc:0},{nome:'Assinaturas',tipo:'despesa',orc:0},{nome:'Presentes',tipo:'despesa',orc:0},
   {nome:'Investimentos',tipo:'despesa',orc:0},{nome:'Outros',tipo:'despesa',orc:0}
 ];
-let cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,objetivos;
+let cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,faturas,objetivos;
 let chartEvolucao=null;
 const fmt=v=>'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 // Impede que textos digitados sejam interpretados como HTML ao renderizar as tabelas.
 const cleanText=v=>String(v??'').replace(/[<>\u0000-\u001F]/g,'').trim().slice(0,160);
 const tabNames=['resumo','lancamentos','orcamento','grafico','objetivos','cartoes','metas','investimentos','dividas','exportar'];
-function initEmpty(){cats=CAT_DEFAULTS.map(c=>({...c}));lancamentos=[];metas=[];investimentos=[];dividas=[];cartoes=[];debitos=[];objetivos=[];}
+function initEmpty(){cats=CAT_DEFAULTS.map(c=>({...c}));lancamentos=[];metas=[];investimentos=[];dividas=[];cartoes=[];debitos=[];faturas=[];objetivos=[];}
 function sanitizeCollections(){
   const fields=(arr,names)=>arr.forEach(item=>names.forEach(name=>{if(typeof item?.[name]==='string')item[name]=cleanText(item[name]);}));
   fields(cats,['nome']);fields(lancamentos,['desc','cat']);fields(metas,['nome']);
@@ -659,6 +659,7 @@ function loadDemo(){
     {ccIdx:1,desc:'Assinatura Adobe',cat:'Assinaturas',valor:420,parc:1,valorParc:420,data:d(8)},
     {ccIdx:1,desc:'Passagem aérea',cat:'Viagens',valor:900,parc:3,valorParc:300,data:d(3)},
   ];
+  faturas=[];
   metas=[{nome:'Reserva de emergência (6x)',total:45000,atual:18000},{nome:'Viagem Europa',total:12000,atual:4500},{nome:'Novo celular',total:3500,atual:1200}];
   const v=(mOff)=>{const dt=new Date(hoje);dt.setMonth(dt.getMonth()+mOff);return dt.toISOString().split('T')[0];};
   investimentos=[{nome:'Tesouro Selic 2029',tipo:'Renda fixa',valor:15000,retorno:11.5,venc:v(48)},{nome:'CDB Banco Inter',tipo:'Renda fixa',valor:8000,retorno:12.2,venc:v(5)},{nome:'IVVB11',tipo:'Renda variável',valor:5000,retorno:14.0,venc:null},{nome:'Previdência PGBL',tipo:'Previdência',valor:3200,retorno:9.0,venc:null}];
@@ -963,7 +964,7 @@ function renderLanc(){
 }
 
 function addCartao(){const nome=cleanText(document.getElementById('cc-nome').value),lim=parseFloat(document.getElementById('cc-lim').value)||0,venc=Math.min(31,Math.max(1,parseInt(document.getElementById('cc-venc').value)||1));if(!nome)return;cartoes.push({nome,lim,venc});document.getElementById('cc-nome').value='';document.getElementById('cc-lim').value='';document.getElementById('cc-venc').value='';saveData();renderListaCC();updateCCSel();}
-function delCartao(i){debitos=debitos.filter(d=>d.ccIdx!==i);debitos.forEach(d=>{if(d.ccIdx>i)d.ccIdx--;});cartoes.splice(i,1);saveData();renderListaCC();updateCCSel();renderFaturas();updateResumo();}
+function delCartao(i){debitos=debitos.filter(d=>d.ccIdx!==i);debitos.forEach(d=>{if(d.ccIdx>i)d.ccIdx--;});faturas=faturas.filter(f=>f.ccIdx!==i);faturas.forEach(f=>{if(f.ccIdx>i)f.ccIdx--;});cartoes.splice(i,1);saveData();renderListaCC();updateCCSel();renderFaturas();updateResumo();}
 function renderListaCC(){const el=document.getElementById('lista-cc');if(!cartoes.length){el.innerHTML='<div class="empty">Nenhum cartão.</div>';return;}const pm=parcelasNoMes();el.innerHTML=cartoes.map((c,i)=>{const fat=pm.filter(d=>d.ccIdx===i).reduce((a,d)=>a+d.valorParc,0),pct=c.lim>0?Math.min(100,Math.round(fat/c.lim*100)):0,col=pct>80?'#DC4C4C':pct>50?'#D98E04':'#16A085';return`<div class="card" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap"><div style="flex:1;min-width:160px"><div style="font-weight:500;margin-bottom:4px">💳 ${c.nome}</div><div style="font-size:12px;color:#888">Vence dia ${c.venc} | Limite: ${fmt(c.lim)}</div><div class="pbar" style="margin-top:8px"><div class="pfill" style="width:${pct}%;background:${col}"></div></div><div style="font-size:12px;color:#888;margin-top:3px">Fatura de ${mesSel}: <b style="color:${col}">${fmt(fat)}</b> (${pct}%)</div></div><button class="btn btn-r" onclick="delCartao(${i})">🗑</button></div>`;}).join('');}
 function addDebito(){const ci=parseInt(document.getElementById('db-cc').value),desc=cleanText(document.getElementById('db-desc').value),cat=cleanText(document.getElementById('db-cat').value),val=parseFloat(document.getElementById('db-val').value),parc=Math.max(1,parseInt(document.getElementById('db-parc').value)||1),data=document.getElementById('db-data').value||new Date().toISOString().split('T')[0];if(isNaN(ci)||!cartoes[ci]||!desc||isNaN(val)||val<=0)return;debitos.unshift({ccIdx:ci,desc,cat,valor:Math.round(val*100)/100,parc,valorParc:Math.floor((val/parc)*100)/100,data});document.getElementById('db-desc').value='';document.getElementById('db-val').value='';document.getElementById('db-parc').value='1';saveData();renderDebitosTab();renderFaturas();renderListaCC();updateResumo();}
 function delDebito(i){debitos.splice(i,1);saveData();renderDebitosTab();renderFaturas();renderListaCC();updateResumo();}
@@ -983,6 +984,43 @@ function renderDebitosTab(){
       <td><button class="btn btn-r" onclick="delDebito(${i})">🗑</button></td>
     </tr>`;}).join('')+'</tbody></table></div>';
 }
+function registroFatura(ccIdx,mes=mesSel){return faturas.find(f=>f.ccIdx===ccIdx&&f.mes===mes);}
+function vencimentoFatura(cartao,mes=mesSel){
+  const[y,m]=mes.split('-').map(Number),ultimo=new Date(y,m,0).getDate(),dia=Math.min(Number(cartao.venc)||1,ultimo);
+  return `${mes}-${String(dia).padStart(2,'0')}`;
+}
+function situacaoFatura(ccIdx,total){
+  const reg=registroFatura(ccIdx);
+  if(reg?.status==='paga')return{status:'paga',label:'Paga',classe:'bg'};
+  if(reg?.status==='fechada')return{status:'fechada',label:'Fechada',classe:'bb'};
+  const venc=vencimentoFatura(cartoes[ccIdx]);
+  if(total>0&&new Date(venc+'T23:59:59')<new Date())return{status:'vencida',label:'Vencida',classe:'br'};
+  return{status:'aberta',label:'Aberta',classe:'ba'};
+}
+function fecharFatura(ccIdx){
+  const total=parcelasNoMes().filter(p=>p.ccIdx===ccIdx).reduce((s,p)=>s+p.valorParc,0);
+  if(total<=0)return alert('Esta fatura não possui lançamentos.');
+  const reg=registroFatura(ccIdx),dados={ccIdx,mes:mesSel,status:'fechada',valorFatura:total,fechadaEm:new Date().toISOString()};
+  if(reg)Object.assign(reg,dados);else faturas.push(dados);
+  saveData();renderFaturas();
+}
+function reabrirFatura(ccIdx){
+  const reg=registroFatura(ccIdx);if(!reg)return;
+  if(reg.status==='paga'&&!confirm('Esta fatura está paga. Deseja reabri-la e remover o registro do pagamento?'))return;
+  const pos=faturas.indexOf(reg);faturas.splice(pos,1);saveData();renderFaturas();
+}
+function pagarFatura(ccIdx){
+  const total=parcelasNoMes().filter(p=>p.ccIdx===ccIdx).reduce((s,p)=>s+p.valorParc,0);
+  if(total<=0)return alert('Esta fatura não possui valor para pagamento.');
+  const valorTexto=prompt('Valor pago (R$):',total.toFixed(2).replace('.',','));if(valorTexto===null)return;
+  const valor=parseFloat(valorTexto.replace(/\./g,'').replace(',','.'));
+  if(!Number.isFinite(valor)||valor<=0)return alert('Informe um valor de pagamento válido.');
+  const hoje=new Date().toISOString().split('T')[0],data=prompt('Data do pagamento (AAAA-MM-DD):',hoje);if(data===null)return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(data)||Number.isNaN(new Date(data+'T00:00:00').getTime()))return alert('Informe a data no formato AAAA-MM-DD.');
+  const reg=registroFatura(ccIdx),dados={ccIdx,mes:mesSel,status:'paga',valorFatura:total,valorPago:Math.round(valor*100)/100,dataPagamento:data,pagaEm:new Date().toISOString()};
+  if(reg)Object.assign(reg,dados);else faturas.push(dados);
+  saveData();renderFaturas();
+}
 function renderFaturas(){
   const el=document.getElementById('painel-fat');
   if(!cartoes.length){el.innerHTML='<div class="empty">Nenhum cartão.</div>';return;}
@@ -992,6 +1030,13 @@ function renderFaturas(){
     const total=ds.reduce((a,d)=>a+d.valorParc,0);
     const pct=c.lim>0?Math.min(100,Math.round(total/c.lim*100)):0;
     const col=pct>80?'#DC4C4C':pct>50?'#D98E04':'#16A085';
+    const sit=situacaoFatura(i,total),reg=registroFatura(i),venc=vencimentoFatura(c).split('-').reverse().join('/');
+    const pagamento=reg?.status==='paga'?`<div class="alert-banner" style="background:var(--positive-soft);border-color:#b7e2d5;color:var(--positive);margin-top:10px">✓ <span>Pago em <b>${reg.dataPagamento.split('-').reverse().join('/')}</b> · Valor pago: <b>${fmt(reg.valorPago)}</b></span></div>`:'';
+    const acoes=total>0?`<div style="display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap;margin-top:10px">
+      ${sit.status==='aberta'||sit.status==='vencida'?`<button class="btn btn-b" onclick="fecharFatura(${i})">Fechar fatura</button>`:''}
+      ${sit.status!=='paga'?`<button class="btn btn-g" onclick="pagarFatura(${i})">✓ Pagar fatura</button>`:`<button class="btn" onclick="reabrirFatura(${i})">Reabrir</button>`}
+      ${sit.status==='fechada'?`<button class="btn" onclick="reabrirFatura(${i})">Reabrir</button>`:''}
+    </div>`:'';
     const rows=ds.length
       ?'<div style="overflow-x:auto"><table><thead><tr><th>Data</th><th>Descrição</th><th>Cat.</th><th>Total</th><th>Parc.</th><th>Esta fatura</th></tr></thead><tbody>'
         +ds.map(d=>`<tr><td>${d.dataParcela.split('-').reverse().join('/')}</td><td style="white-space:normal">${d.desc}</td><td>${catChip(d.cat)}</td><td>${fmt(d.valor)}</td><td>${d.numParcela}/${d.parc}</td><td style="color:#A32D2D;font-weight:500">${fmt(d.valorParc)}</td></tr>`).join('')
@@ -1000,13 +1045,13 @@ function renderFaturas(){
     return`<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
         <span style="font-weight:600;font-size:15px">💳 ${c.nome}</span>
-        <span class="badge ${pct>80?'br':pct>50?'ba':'bg'}">Limite: ${pct}%</span>
+        <div style="display:flex;gap:6px;align-items:center"><span class="badge ${sit.classe}">${sit.label}</span><span class="badge ${pct>80?'br':pct>50?'ba':'bg'}">Limite: ${pct}%</span></div>
       </div>
       <div class="pbar"><div class="pfill" style="width:${pct}%;background:${col}"></div></div>
       <div style="display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:10px;margin-top:4px">
         <span>Fatura: <b style="color:${col}">${fmt(total)}</b></span>
-        <span>Limite: <b>${fmt(c.lim)}</b> | Vence dia ${c.venc}</span>
-      </div>${rows}
+        <span>Limite: <b>${fmt(c.lim)}</b> | Vencimento: <b>${venc}</b></span>
+      </div>${rows}${pagamento}${acoes}
     </div>`;
   }).join('');
 }
@@ -1271,7 +1316,7 @@ function downloadFile(content,nome,type){
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function exportBackup(nome){
-  const backup={app:'Akaccount',version:2,exportedAt:new Date().toISOString(),data:{cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,objetivos}};
+  const backup={app:'Akaccount',version:3,exportedAt:new Date().toISOString(),data:{cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,faturas,objetivos}};
   const pad=new Date().toISOString().slice(0,10);
   downloadFile(JSON.stringify(backup,null,2),nome||`akaccount_backup_${pad}.json`,'application/json;charset=utf-8');
 }
@@ -1282,7 +1327,7 @@ async function importBackup(file){
     const names=['cats','lancamentos','metas','investimentos','dividas','cartoes','debitos','objetivos'];
     if(parsed?.app!=='Akaccount'||!d||!names.every(n=>Array.isArray(d[n])))throw new Error('Arquivo incompatível');
     if(!confirm('Restaurar este backup? Os dados atuais serão substituídos.'))return;
-    ({cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,objetivos}=d);
+    ({cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,objetivos}=d);faturas=Array.isArray(d.faturas)?d.faturas:[];
     sanitizeCollections();await saveData();renderTudo();alert('Backup restaurado com sucesso.');
   }catch(e){alert('Não foi possível importar: '+e.message);}
 }
@@ -1296,7 +1341,7 @@ Object.assign(window,{
   mesAnterior,mesProximo,irParaMes,irHoje,
   addLanc,delLanc,
   addCat,
-  addCartao,delCartao,addDebito,delDebito,renderTodosDebitos,limparFiltrosDebitos,removerDebitoHistorico,
+  addCartao,delCartao,addDebito,delDebito,renderTodosDebitos,limparFiltrosDebitos,removerDebitoHistorico,fecharFatura,reabrirFatura,pagarFatura,
   addMeta,aporte,delMeta,
   addInvest,delInvest,preencherSelic,calcTaxaCDI,
   addDivida,delDiv,
