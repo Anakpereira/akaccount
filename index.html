@@ -973,9 +973,21 @@ function renderListaCats(){
       <td><span class="badge ${c.tipo==='receita'?'bg':'br'}">${c.tipo}</span></td>
       <td><input type="number" value="${c.orc||''}" placeholder="R$ —" min="0" step="0.01"
         style="width:120px;height:30px;font-size:13px;padding:0 8px;border:1px solid #ddd;border-radius:6px"
-        onchange="cats[${i}].orc=parseFloat(this.value)||0;saveData();renderOrcCats();renderAlertas('alertas-orc');updateResumo()" /></td>
-      <td><button class="btn btn-r" onclick="cats.splice(${i},1);saveData();renderListaCats();updateLancCatSel()">🗑</button></td>
+        onchange="atualizarOrcamento(${i},this.value)" /></td>
+      <td><button class="btn btn-r" onclick="delCat(${i})">🗑</button></td>
     </tr>`).join('')+'</tbody></table></div>';
+}
+async function atualizarOrcamento(i,valor){
+  if(!cats[i])return;
+  const numero=parseFloat(String(valor).replace(',','.'))||0;
+  cats[i].orc=Math.max(0,Math.round(numero*100)/100);
+  renderOrcCats();renderAlertas('alertas-orc');updateResumo();
+  const ok=await saveData();
+  if(ok)toast(`✓ Orçamento de ${cats[i].nome} salvo.`);else toast('Não foi possível salvar o orçamento.','error');
+}
+function delCat(i){
+  if(!cats[i]||!confirm(`Excluir a categoria "${cats[i].nome}"?`))return;
+  cats.splice(i,1);saveData();renderListaCats();renderOrcCats();updateLancCatSel();updateDbCatSel();updateRecCatSel();
 }
 function addCat(){const nome=cleanText(document.getElementById('nc-nome').value),tipo=document.getElementById('nc-tipo').value,orc=parseFloat(document.getElementById('nc-orc').value)||0;if(!nome)return;if(cats.some(c=>c.nome.toLowerCase()===nome.toLowerCase())){alert('Categoria já existe.');return;}cats.push({nome,tipo,orc});document.getElementById('nc-nome').value='';document.getElementById('nc-orc').value='';saveData();renderListaCats();updateLancCatSel();}
 
@@ -1410,7 +1422,7 @@ Object.assign(window,{
   showTab,showStab,abrirAcoesRapidas,abrirMais,fecharModal,irMenu,atalhoNovo,
   mesAnterior,mesProximo,irParaMes,irHoje,
   addLanc,delLanc,addRecorrente,toggleRecorrente,delRecorrente,updateRecCatSel,
-  addCat,
+  addCat,delCat,atualizarOrcamento,
   addCartao,delCartao,addDebito,delDebito,renderTodosDebitos,limparFiltrosDebitos,removerDebitoHistorico,fecharFatura,reabrirFatura,pagarFatura,
   addMeta,aporte,delMeta,
   addInvest,delInvest,preencherSelic,calcTaxaCDI,
