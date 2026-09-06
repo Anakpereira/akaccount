@@ -721,10 +721,9 @@ function atualizarNavMes(){
   const nomes=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   document.getElementById('mes-label').textContent=`${nomes[m-1]} ${y}`;
   document.getElementById('mes-picker').value=mesSel;
-  // desabilita "próximo" se já está no mês atual
-  const hoje=mesAtualYM();
-  document.getElementById('btn-prox').disabled=mesSel>=hoje;
-  document.getElementById('btn-prox').style.opacity=mesSel>=hoje?'0.35':'1';
+  // Mantém o próximo mês disponível para consultar faturas e parcelas futuras.
+  document.getElementById('btn-prox').disabled=false;
+  document.getElementById('btn-prox').style.opacity='1';
 }
 
 function mesAnterior(){
@@ -735,8 +734,6 @@ function mesAnterior(){
 }
 
 function mesProximo(){
-  const hoje=mesAtualYM();
-  if(mesSel>=hoje)return;
   const[y,m]=mesSel.split('-').map(Number);
   const d=new Date(y,m,1);
   mesSel=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
@@ -862,7 +859,9 @@ function catChip(nome,extra=''){
 function gastoPorCat(){
   const g={};
   doMes(lancamentos).filter(l=>l.tipo==='despesa').forEach(l=>{g[l.cat]=(g[l.cat]||0)+l.valor;});
-  parcelasNoMes().forEach(d=>{g[d.cat]=(g[d.cat]||0)+d.valorParc;});
+  // No orçamento, a compra compromete o valor total no mês em que foi realizada.
+  // Na fatura, as parcelas continuam começando apenas no mês seguinte.
+  doMes(debitos).forEach(d=>{g[d.cat]=(g[d.cat]||0)+Number(d.valor||0);});
   return g;
 }
 
@@ -1057,7 +1056,15 @@ function renderLanc(){
 function addCartao(){const nome=cleanText(document.getElementById('cc-nome').value),lim=parseFloat(document.getElementById('cc-lim').value)||0,venc=Math.min(31,Math.max(1,parseInt(document.getElementById('cc-venc').value)||1));if(!nome)return;cartoes.push({nome,lim,venc});document.getElementById('cc-nome').value='';document.getElementById('cc-lim').value='';document.getElementById('cc-venc').value='';saveData();renderListaCC();updateCCSel();}
 function delCartao(i){debitos=debitos.filter(d=>d.ccIdx!==i);debitos.forEach(d=>{if(d.ccIdx>i)d.ccIdx--;});faturas=faturas.filter(f=>f.ccIdx!==i);faturas.forEach(f=>{if(f.ccIdx>i)f.ccIdx--;});cartoes.splice(i,1);saveData();renderListaCC();updateCCSel();renderFaturas();updateResumo();}
 function renderListaCC(){const el=document.getElementById('lista-cc');if(!cartoes.length){el.innerHTML='<div class="empty">Nenhum cartão.</div>';return;}const pm=parcelasNoMes();el.innerHTML=cartoes.map((c,i)=>{const fat=pm.filter(d=>d.ccIdx===i).reduce((a,d)=>a+d.valorParc,0),pct=c.lim>0?Math.min(100,Math.round(fat/c.lim*100)):0,col=pct>80?'#DC4C4C':pct>50?'#D98E04':'#16A085';return`<div class="card" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap"><div style="flex:1;min-width:160px"><div style="font-weight:500;margin-bottom:4px">💳 ${c.nome}</div><div style="font-size:12px;color:#888">Vence dia ${c.venc} | Limite: ${fmt(c.lim)}</div><div class="pbar" style="margin-top:8px"><div class="pfill" style="width:${pct}%;background:${col}"></div></div><div style="font-size:12px;color:#888;margin-top:3px">Fatura de ${mesSel}: <b style="color:${col}">${fmt(fat)}</b> (${pct}%)</div></div><button class="btn btn-r" onclick="delCartao(${i})">🗑</button></div>`;}).join('');}
-function addDebito(){const ci=parseInt(document.getElementById('db-cc').value),desc=cleanText(document.getElementById('db-desc').value),cat=cleanText(document.getElementById('db-cat').value),val=parseFloat(document.getElementById('db-val').value),parc=Math.max(1,parseInt(document.getElementById('db-parc').value)||1),data=document.getElementById('db-data').value||new Date().toISOString().split('T')[0];if(isNaN(ci)||!cartoes[ci]||!desc||isNaN(val)||val<=0)return;debitos.unshift({ccIdx:ci,desc,cat,valor:Math.round(val*100)/100,parc,valorParc:Math.floor((val/parc)*100)/100,data});document.getElementById('db-desc').value='';document.getElementById('db-val').value='';document.getElementById('db-parc').value='1';saveData();renderDebitosTab();renderFaturas();renderListaCC();updateResumo();}
+function addDebito(){
+  const ci=parseInt(document.getElementById('db-cc').value),desc=cleanText(document.getElementById('db-desc').value),cat=cleanText(document.getElementById('db-cat').value),val=parseFloat(document.getElementById('db-val').value),parc=Math.max(1,parseInt(document.getElementById('db-parc').value)||1),data=document.getElementById('db-data').value||new Date().toISOString().split('T')[0];
+  if(isNaN(ci)||!cartoes[ci]||!desc||isNaN(val)||val<=0)return;
+  debitos.unshift({ccIdx:ci,desc,cat,valor:Math.round(val*100)/100,parc,valorParc:Math.floor((val/parc)*100)/100,data});
+  document.getElementById('db-desc').value='';document.getElementById('db-val').value='';document.getElementById('db-parc').value='1';
+  saveData();renderDebitosTab();renderFaturas();renderListaCC();updateResumo();
+  const prox=mesDeslocado(data.slice(0,7),1).split('-').reverse().join('/');
+  toast(`✓ Compra lançada. Primeira parcela na fatura ${prox}.`);
+}
 function delDebito(i){debitos.splice(i,1);saveData();renderDebitosTab();renderFaturas();renderListaCC();updateResumo();}
 function renderDebitosTab(){
   const el=document.getElementById('tab-debitos');
