@@ -222,6 +222,23 @@ tr:hover td{background:#fafafa}
       <button class="btn" onclick="addLanc()">+ Adicionar</button>
     </div>
   </div>
+  <div class="card">
+    <div class="stitle">Lançamentos recorrentes</div>
+    <div class="row">
+      <select id="rec-tipo" onchange="updateRecCatSel()"><option value="despesa">Despesa</option><option value="receita">Receita</option></select>
+      <input type="text" id="rec-desc" placeholder="Descrição (ex.: Aluguel)" />
+      <select id="rec-cat"></select>
+    </div>
+    <div class="row">
+      <input type="number" id="rec-val" placeholder="Valor mensal (R$)" min="0" step="0.01" />
+      <input type="number" id="rec-dia" placeholder="Dia" min="1" max="31" />
+      <div style="flex:1;min-width:145px"><div style="font-size:11px;color:#888;margin-bottom:4px">Início</div><input type="month" id="rec-inicio" style="width:100%" /></div>
+      <div style="flex:1;min-width:145px"><div style="font-size:11px;color:#888;margin-bottom:4px">Término (opcional)</div><input type="month" id="rec-fim" style="width:100%" /></div>
+      <button class="btn btn-b" onclick="addRecorrente()">+ Criar recorrência</button>
+    </div>
+    <div style="font-size:11px;color:#888;margin:2px 0 12px">O lançamento será criado automaticamente uma vez por mês, sem duplicidade.</div>
+    <div id="lista-recorrentes"><div class="empty">Nenhum lançamento recorrente.</div></div>
+  </div>
   <div class="card"><div class="stitle">Histórico</div><div id="tab-lanc"><div class="empty">Nenhum lançamento.</div></div></div>
 </div>
 
@@ -514,13 +531,13 @@ async function logout(){
   await signOut(auth);
 }
 
-function dataPayload(){return{cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,faturas,objetivos,updatedAt:new Date().toISOString()};}
+function dataPayload(){return{cats,lancamentos,recorrentes,metas,investimentos,dividas,cartoes,debitos,faturas,objetivos,updatedAt:new Date().toISOString()};}
 // Usado somente para migrar dados gravados pela versão anterior.
 function legacyLocalKey(){return currentUser?'akaccount_data_'+currentUser.uid:null;}
 function readLegacyLocal(){try{const raw=localStorage.getItem(legacyLocalKey());return raw?JSON.parse(raw):null;}catch(e){return null;}}
 function clearLegacyLocal(){try{const key=legacyLocalKey();if(key)localStorage.removeItem(key);}catch(e){}}
 function applyData(d){
-  cats=d.cats||CAT_DEFAULTS.map(c=>({...c}));lancamentos=d.lancamentos||[];metas=d.metas||[];
+  cats=d.cats||CAT_DEFAULTS.map(c=>({...c}));lancamentos=d.lancamentos||[];recorrentes=d.recorrentes||[];metas=d.metas||[];
   investimentos=d.investimentos||[];dividas=d.dividas||[];cartoes=d.cartoes||[];
   debitos=d.debitos||[];faturas=d.faturas||[];objetivos=d.objetivos||[];sanitizeCollections();
 }
@@ -570,8 +587,10 @@ function initApp(){
   document.getElementById('l-data').value=hoje;
   document.getElementById('db-data').value=hoje;
   document.getElementById('i-aplic').value=hoje;
+  document.getElementById('rec-inicio').value=mesAtualYM();
+  document.getElementById('rec-dia').value=String(new Date().getDate());
   document.getElementById('l-tipo').addEventListener('change',updateLancCatSel);
-  updateLancCatSel(); updateDbCatSel();
+  updateLancCatSel(); updateDbCatSel(); updateRecCatSel();
   renderAll(); updateResumo();
 }
 
@@ -607,16 +626,16 @@ const CAT_DEFAULTS=[
   {nome:'Pets',tipo:'despesa',orc:0},{nome:'Assinaturas',tipo:'despesa',orc:0},{nome:'Presentes',tipo:'despesa',orc:0},
   {nome:'Investimentos',tipo:'despesa',orc:0},{nome:'Outros',tipo:'despesa',orc:0}
 ];
-let cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,faturas,objetivos;
+let cats,lancamentos,recorrentes,metas,investimentos,dividas,cartoes,debitos,faturas,objetivos;
 let chartEvolucao=null;
 const fmt=v=>'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 // Impede que textos digitados sejam interpretados como HTML ao renderizar as tabelas.
 const cleanText=v=>String(v??'').replace(/[<>\u0000-\u001F]/g,'').trim().slice(0,160);
 const tabNames=['resumo','lancamentos','orcamento','grafico','objetivos','cartoes','metas','investimentos','dividas','exportar'];
-function initEmpty(){cats=CAT_DEFAULTS.map(c=>({...c}));lancamentos=[];metas=[];investimentos=[];dividas=[];cartoes=[];debitos=[];faturas=[];objetivos=[];}
+function initEmpty(){cats=CAT_DEFAULTS.map(c=>({...c}));lancamentos=[];recorrentes=[];metas=[];investimentos=[];dividas=[];cartoes=[];debitos=[];faturas=[];objetivos=[];}
 function sanitizeCollections(){
   const fields=(arr,names)=>arr.forEach(item=>names.forEach(name=>{if(typeof item?.[name]==='string')item[name]=cleanText(item[name]);}));
-  fields(cats,['nome']);fields(lancamentos,['desc','cat']);fields(metas,['nome']);
+  fields(cats,['nome']);fields(lancamentos,['desc','cat']);fields(recorrentes,['desc','cat']);fields(metas,['nome']);
   fields(investimentos,['nome','tipo']);fields(dividas,['nome']);fields(cartoes,['nome']);
   fields(debitos,['desc','cat']);fields(objetivos,['nome']);
 }
@@ -659,6 +678,7 @@ function loadDemo(){
     {ccIdx:1,desc:'Assinatura Adobe',cat:'Assinaturas',valor:420,parc:1,valorParc:420,data:d(8)},
     {ccIdx:1,desc:'Passagem aérea',cat:'Viagens',valor:900,parc:3,valorParc:300,data:d(3)},
   ];
+  recorrentes=[];
   faturas=[];
   metas=[{nome:'Reserva de emergência (6x)',total:45000,atual:18000},{nome:'Viagem Europa',total:12000,atual:4500},{nome:'Novo celular',total:3500,atual:1200}];
   const v=(mOff)=>{const dt=new Date(hoje);dt.setMonth(dt.getMonth()+mOff);return dt.toISOString().split('T')[0];};
@@ -745,7 +765,7 @@ function clearAll(){
   initEmpty();saveData();renderAll();updateResumo();
   alert('Dados apagados. Um backup foi baixado antes da exclusão.');
 }
-function renderAll(){renderLanc();renderOrcCats();renderListaCats();renderListaCC();renderDebitosTab();renderFaturas();renderTodosDebitos();renderMetas();renderInvest();renderDiv();renderObjetivos();updateLancCatSel();updateCCSel();updateDbCatSel();}
+function renderAll(){renderLanc();renderRecorrentes();renderOrcCats();renderListaCats();renderListaCC();renderDebitosTab();renderFaturas();renderTodosDebitos();renderMetas();renderInvest();renderDiv();renderObjetivos();updateLancCatSel();updateCCSel();updateDbCatSel();updateRecCatSel();}
 
 function showTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -944,11 +964,43 @@ function addCat(){const nome=cleanText(document.getElementById('nc-nome').value)
 function getCatNames(tipo){return cats.filter(c=>!tipo||c.tipo===tipo).map(c=>c.nome);}
 function updateLancCatSel(){const t=document.getElementById('l-tipo').value,sel=document.getElementById('l-cat'),prev=sel.value;sel.innerHTML=getCatNames(t).map(n=>`<option>${n}</option>`).join('');if([...sel.options].some(o=>o.value===prev))sel.value=prev;}
 function updateDbCatSel(){document.getElementById('db-cat').innerHTML=cats.filter(c=>c.tipo==='despesa').map(c=>`<option>${c.nome}</option>`).join('');}
+function updateRecCatSel(){const tipo=document.getElementById('rec-tipo').value,sel=document.getElementById('rec-cat'),prev=sel.value;sel.innerHTML=getCatNames(tipo).map(n=>`<option>${n}</option>`).join('');if([...sel.options].some(o=>o.value===prev))sel.value=prev;}
 function updateCCSel(){const sel=document.getElementById('db-cc');sel.innerHTML=cartoes.length?cartoes.map((c,i)=>`<option value="${i}">${c.nome}</option>`).join(''):'<option>Cadastre um cartão</option>';}
 
 function addLanc(){const tipo=document.getElementById('l-tipo').value,desc=cleanText(document.getElementById('l-desc').value),cat=cleanText(document.getElementById('l-cat').value),val=parseFloat(document.getElementById('l-val').value),data=document.getElementById('l-data').value||new Date().toISOString().split('T')[0];if(!desc||isNaN(val)||val<=0)return;lancamentos.unshift({tipo,desc,cat,valor:val,data});document.getElementById('l-desc').value='';document.getElementById('l-val').value='';saveData();renderLanc();updateResumo();}
-function delLanc(i){lancamentos.splice(i,1);saveData();renderLanc();updateResumo();}
+function delLanc(i){const l=lancamentos[i];if(l?.recorrenteId){const r=recorrentes.find(x=>x.id===l.recorrenteId);if(r){r.ignorados=Array.isArray(r.ignorados)?r.ignorados:[];if(!r.ignorados.includes(l.data.slice(0,7)))r.ignorados.push(l.data.slice(0,7));}}lancamentos.splice(i,1);saveData();renderLanc();updateResumo();}
+function dataRecorrente(rec,ym){
+  const[y,m]=ym.split('-').map(Number),ultimo=new Date(y,m,0).getDate(),dia=Math.min(Math.max(1,Number(rec.dia)||1),ultimo);
+  return `${ym}-${String(dia).padStart(2,'0')}`;
+}
+function gerarRecorrentesMes(ym){
+  let mudou=false;
+  recorrentes.forEach(rec=>{
+    if(!rec.ativo||ym<rec.inicio||(rec.fim&&ym>rec.fim)||(rec.ignorados||[]).includes(ym))return;
+    if(lancamentos.some(l=>l.recorrenteId===rec.id&&l.data?.startsWith(ym)))return;
+    lancamentos.push({tipo:rec.tipo,desc:rec.desc,cat:rec.cat,valor:rec.valor,data:dataRecorrente(rec,ym),recorrenteId:rec.id});mudou=true;
+  });
+  if(mudou){lancamentos.sort((a,b)=>b.data.localeCompare(a.data));saveData();}
+}
+function addRecorrente(){
+  const tipo=document.getElementById('rec-tipo').value,desc=cleanText(document.getElementById('rec-desc').value),cat=cleanText(document.getElementById('rec-cat').value);
+  const valor=parseFloat(document.getElementById('rec-val').value),dia=Math.min(31,Math.max(1,parseInt(document.getElementById('rec-dia').value)||1));
+  const inicio=document.getElementById('rec-inicio').value||mesAtualYM(),fim=document.getElementById('rec-fim').value||null;
+  if(!desc||!cat||!Number.isFinite(valor)||valor<=0)return alert('Preencha descrição, categoria e um valor válido.');
+  if(fim&&fim<inicio)return alert('O término não pode ser anterior ao início.');
+  recorrentes.push({id:`rec_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,tipo,desc,cat,valor:Math.round(valor*100)/100,dia,inicio,fim,ativo:true,ignorados:[]});
+  document.getElementById('rec-desc').value='';document.getElementById('rec-val').value='';document.getElementById('rec-fim').value='';
+  gerarRecorrentesMes(mesSel);saveData();renderRecorrentes();renderLanc();updateResumo();
+}
+function toggleRecorrente(i){recorrentes[i].ativo=!recorrentes[i].ativo;if(recorrentes[i].ativo)gerarRecorrentesMes(mesSel);saveData();renderRecorrentes();renderLanc();updateResumo();}
+function delRecorrente(i){if(!confirm('Excluir esta recorrência? Os lançamentos já gerados serão mantidos.'))return;recorrentes.splice(i,1);saveData();renderRecorrentes();}
+function renderRecorrentes(){
+  const el=document.getElementById('lista-recorrentes');if(!el)return;
+  if(!recorrentes.length){el.innerHTML='<div class="empty" style="padding:1rem">Nenhum lançamento recorrente.</div>';return;}
+  el.innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>Descrição</th><th>Tipo</th><th>Categoria</th><th>Valor</th><th>Todo dia</th><th>Período</th><th>Status</th><th></th></tr></thead><tbody>'+recorrentes.map((r,i)=>`<tr><td style="font-weight:500;white-space:normal">${r.desc}</td><td><span class="badge ${r.tipo==='receita'?'bg':'br'}">${r.tipo}</span></td><td>${catChip(r.cat)}</td><td style="font-weight:600">${fmt(r.valor)}</td><td>${r.dia}</td><td>${r.inicio.split('-').reverse().join('/')}${r.fim?' até '+r.fim.split('-').reverse().join('/'):' · sem término'}</td><td><span class="badge ${r.ativo?'bg':''}">${r.ativo?'Ativo':'Pausado'}</span></td><td><div style="display:flex;gap:5px"><button class="btn ${r.ativo?'btn-a':'btn-g'}" onclick="toggleRecorrente(${i})">${r.ativo?'Pausar':'Ativar'}</button><button class="btn btn-r" onclick="delRecorrente(${i})">🗑</button></div></td></tr>`).join('')+'</tbody></table></div>';
+}
 function renderLanc(){
+  gerarRecorrentesMes(mesSel);
   const el=document.getElementById('tab-lanc');
   const lm=doMes(lancamentos);
   if(!lm.length){el.innerHTML=`<div class="empty">Nenhum lançamento em ${mesSel}.</div>`;return;}
@@ -1316,7 +1368,7 @@ function downloadFile(content,nome,type){
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function exportBackup(nome){
-  const backup={app:'Akaccount',version:3,exportedAt:new Date().toISOString(),data:{cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,faturas,objetivos}};
+  const backup={app:'Akaccount',version:4,exportedAt:new Date().toISOString(),data:{cats,lancamentos,recorrentes,metas,investimentos,dividas,cartoes,debitos,faturas,objetivos}};
   const pad=new Date().toISOString().slice(0,10);
   downloadFile(JSON.stringify(backup,null,2),nome||`akaccount_backup_${pad}.json`,'application/json;charset=utf-8');
 }
@@ -1327,7 +1379,7 @@ async function importBackup(file){
     const names=['cats','lancamentos','metas','investimentos','dividas','cartoes','debitos','objetivos'];
     if(parsed?.app!=='Akaccount'||!d||!names.every(n=>Array.isArray(d[n])))throw new Error('Arquivo incompatível');
     if(!confirm('Restaurar este backup? Os dados atuais serão substituídos.'))return;
-    ({cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,objetivos}=d);faturas=Array.isArray(d.faturas)?d.faturas:[];
+    ({cats,lancamentos,metas,investimentos,dividas,cartoes,debitos,objetivos}=d);recorrentes=Array.isArray(d.recorrentes)?d.recorrentes:[];faturas=Array.isArray(d.faturas)?d.faturas:[];
     sanitizeCollections();await saveData();renderTudo();alert('Backup restaurado com sucesso.');
   }catch(e){alert('Não foi possível importar: '+e.message);}
 }
@@ -1339,7 +1391,7 @@ Object.assign(window,{
   loginGoogle,logout,loadDemo,clearAll,syncNow,
   showTab,showStab,abrirAcoesRapidas,abrirMais,fecharModal,irMenu,atalhoNovo,
   mesAnterior,mesProximo,irParaMes,irHoje,
-  addLanc,delLanc,
+  addLanc,delLanc,addRecorrente,toggleRecorrente,delRecorrente,updateRecCatSel,
   addCat,
   addCartao,delCartao,addDebito,delDebito,renderTodosDebitos,limparFiltrosDebitos,removerDebitoHistorico,fecharFatura,reabrirFatura,pagarFatura,
   addMeta,aporte,delMeta,
