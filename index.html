@@ -920,12 +920,12 @@ function updateResumo(){
   document.getElementById('sd').textContent=fmt(desp);
   document.getElementById('sc').textContent=fmt(comprasCartao);
   document.getElementById('sf').textContent=fmt(fat);
-  // O saldo livre mede o que ainda pode ser comprometido no mês da compra.
-  // A fatura é exibida separadamente e não é deduzida de novo, evitando dupla contagem.
-  document.getElementById('ss').textContent=fmt(rec-desp-comprasCartao);
+  // O saldo livre representa o caixa do mês: receitas menos despesas e a fatura que vence no período.
+  // As compras novas já comprometem o orçamento, mas só afetam o caixa quando a fatura vencer.
+  document.getElementById('ss').textContent=fmt(rec-desp-fat);
   document.getElementById('si').textContent=fmt(inv);
   const ant=mesDeslocado(mesSel,-1),lmAnt=lancamentos.filter(l=>l.data?.startsWith(ant)),dmAnt=parcelasNoMes(ant);
-  const recAnt=lmAnt.filter(l=>l.tipo==='receita').reduce((a,l)=>a+l.valor,0),despAnt=lmAnt.filter(l=>l.tipo==='despesa').reduce((a,l)=>a+l.valor,0),comprasAnt=debitos.filter(d=>d.data?.startsWith(ant)).reduce((a,d)=>a+Number(d.valor||0),0),fatAnt=dmAnt.reduce((a,d)=>a+d.valorParc,0),saldo=rec-desp-comprasCartao,saldoAnt=recAnt-despAnt-comprasAnt;
+  const recAnt=lmAnt.filter(l=>l.tipo==='receita').reduce((a,l)=>a+l.valor,0),despAnt=lmAnt.filter(l=>l.tipo==='despesa').reduce((a,l)=>a+l.valor,0),comprasAnt=debitos.filter(d=>d.data?.startsWith(ant)).reduce((a,d)=>a+Number(d.valor||0),0),fatAnt=dmAnt.reduce((a,d)=>a+d.valorParc,0),saldo=rec-desp-fat,saldoAnt=recAnt-despAnt-fatAnt;
   const tendencia=(id,atual,anterior,melhorAlta=true)=>{const el=document.getElementById(id);if(!el)return;if(!anterior){el.textContent='Sem comparação anterior';el.className='metric-trend';return;}const pct=Math.round((atual-anterior)/Math.abs(anterior)*100),alta=pct>=0,bom=melhorAlta?alta:!alta;el.textContent=`${alta?'↑':'↓'} ${Math.abs(pct)}% em relação ao mês anterior`;el.className=`metric-trend ${bom?'trend-up':'trend-down'}`;};
   tendencia('tr-receita',rec,recAnt,true);tendencia('tr-despesa',desp,despAnt,false);tendencia('tr-cartao',comprasCartao,comprasAnt,false);tendencia('tr-fatura',fat,fatAnt,false);tendencia('tr-saldo',saldo,saldoAnt,true);
   renderAlertas('alertas-topo');
