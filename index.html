@@ -82,6 +82,7 @@ tr:hover td{background:#fafafa}
 #resumo>.mgrid .metric::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--primary)}
 #resumo>.mgrid .metric:nth-child(1)::before{background:var(--positive)}#resumo>.mgrid .metric:nth-child(2)::before{background:var(--danger)}#resumo>.mgrid .metric:nth-child(3)::before{background:var(--purple)}#resumo>.mgrid .metric:nth-child(4)::before{background:var(--primary)}#resumo>.mgrid .metric:nth-child(5)::before{background:var(--teal)}
 #resumo>.mgrid .metric:nth-child(6)::before{background:var(--warning)}
+#resumo>.mgrid .metric:nth-child(7)::before{background:var(--teal)}
 @media(min-width:900px){
   .side-nav{display:flex;position:fixed;z-index:100;left:0;top:0;bottom:0;width:224px;background:#F8FAFD;border-right:1px solid var(--border);padding:16px 12px;flex-direction:column;overflow-y:auto}
   .app{max-width:1180px;margin-left:224px;margin-right:auto;padding:1.25rem 2rem}.tabs{display:none}.topbar-left{display:none}.fab{display:block;bottom:28px}
@@ -208,6 +209,7 @@ tr:hover td{background:#fafafa}
     <div class="metric"><div class="mlabel">Despesas</div><div class="mval r" id="sd">R$ 0</div><div class="metric-trend" id="tr-despesa"></div></div>
     <div class="metric"><div class="mlabel">Compras no cartão</div><div class="mval p" id="sc">R$ 0</div><div class="metric-trend" id="tr-cartao"></div></div>
     <div class="metric"><div class="mlabel">Fatura do mês</div><div class="mval r" id="sf">R$ 0</div><div class="metric-trend" id="tr-fatura"></div></div>
+    <div class="metric"><div class="mlabel">Saldo anterior</div><div class="mval b" id="sa">R$ 0</div><div class="metric-trend">Herdado dos meses anteriores</div></div>
     <div class="metric"><div class="mlabel">Saldo livre</div><div class="mval b" id="ss">R$ 0</div><div class="metric-trend" id="tr-saldo"></div></div>
     <div class="metric"><div class="mlabel">Em investimentos</div><div class="mval a" id="si">R$ 0</div><div class="metric-trend">Patrimônio acumulado</div></div>
   </div>
@@ -875,6 +877,10 @@ function renderAlertas(elId){
 }
 
 function calcMensal(){const m={};const add=(data,tipo,val)=>{const ym=data.substring(0,7);if(!m[ym])m[ym]={rec:0,desp:0};tipo==='receita'?m[ym].rec+=val:m[ym].desp+=val;};lancamentos.forEach(l=>add(l.data,l.tipo,l.valor));todasParcelas().forEach(d=>add(d.dataParcela,'despesa',d.valorParc));return m;}
+function saldoAcumuladoAte(ym){
+  const mensal=calcMensal();
+  return Object.keys(mensal).filter(m=>m<=ym).reduce((saldo,m)=>saldo+mensal[m].rec-mensal[m].desp,0);
+}
 
 function renderGrafico(){
   const meses=calcMensal(),keys=Object.keys(meses).sort();
@@ -916,18 +922,23 @@ function updateResumo(){
   const comprasCartao=doMes(debitos).reduce((a,d)=>a+Number(d.valor||0),0);
   const fat=dm.reduce((a,d)=>a+d.valorParc,0);
   const inv=investimentos.reduce((a,i)=>a+i.valor,0);
+  const ant=mesDeslocado(mesSel,-1),saldoAnterior=saldoAcumuladoAte(ant),saldoLivre=saldoAnterior+rec-desp-fat;
   document.getElementById('sr').textContent=fmt(rec);
   document.getElementById('sd').textContent=fmt(desp);
   document.getElementById('sc').textContent=fmt(comprasCartao);
   document.getElementById('sf').textContent=fmt(fat);
+  document.getElementById('sa').textContent=fmt(saldoAnterior);
+  document.getElementById('sa').className=`mval ${saldoAnterior>=0?'b':'r'}`;
   // O saldo livre representa o caixa do mês: receitas menos despesas e a fatura que vence no período.
   // As compras novas já comprometem o orçamento, mas só afetam o caixa quando a fatura vencer.
-  document.getElementById('ss').textContent=fmt(rec-desp-fat);
+  document.getElementById('ss').textContent=fmt(saldoLivre);
+  document.getElementById('ss').className=`mval ${saldoLivre>=0?'b':'r'}`;
   document.getElementById('si').textContent=fmt(inv);
-  const ant=mesDeslocado(mesSel,-1),lmAnt=lancamentos.filter(l=>l.data?.startsWith(ant)),dmAnt=parcelasNoMes(ant);
-  const recAnt=lmAnt.filter(l=>l.tipo==='receita').reduce((a,l)=>a+l.valor,0),despAnt=lmAnt.filter(l=>l.tipo==='despesa').reduce((a,l)=>a+l.valor,0),comprasAnt=debitos.filter(d=>d.data?.startsWith(ant)).reduce((a,d)=>a+Number(d.valor||0),0),fatAnt=dmAnt.reduce((a,d)=>a+d.valorParc,0),saldo=rec-desp-fat,saldoAnt=recAnt-despAnt-fatAnt;
+  const lmAnt=lancamentos.filter(l=>l.data?.startsWith(ant)),dmAnt=parcelasNoMes(ant);
+  const recAnt=lmAnt.filter(l=>l.tipo==='receita').reduce((a,l)=>a+l.valor,0),despAnt=lmAnt.filter(l=>l.tipo==='despesa').reduce((a,l)=>a+l.valor,0),comprasAnt=debitos.filter(d=>d.data?.startsWith(ant)).reduce((a,d)=>a+Number(d.valor||0),0),fatAnt=dmAnt.reduce((a,d)=>a+d.valorParc,0);
   const tendencia=(id,atual,anterior,melhorAlta=true)=>{const el=document.getElementById(id);if(!el)return;if(!anterior){el.textContent='Sem comparação anterior';el.className='metric-trend';return;}const pct=Math.round((atual-anterior)/Math.abs(anterior)*100),alta=pct>=0,bom=melhorAlta?alta:!alta;el.textContent=`${alta?'↑':'↓'} ${Math.abs(pct)}% em relação ao mês anterior`;el.className=`metric-trend ${bom?'trend-up':'trend-down'}`;};
-  tendencia('tr-receita',rec,recAnt,true);tendencia('tr-despesa',desp,despAnt,false);tendencia('tr-cartao',comprasCartao,comprasAnt,false);tendencia('tr-fatura',fat,fatAnt,false);tendencia('tr-saldo',saldo,saldoAnt,true);
+  tendencia('tr-receita',rec,recAnt,true);tendencia('tr-despesa',desp,despAnt,false);tendencia('tr-cartao',comprasCartao,comprasAnt,false);tendencia('tr-fatura',fat,fatAnt,false);
+  const trSaldo=document.getElementById('tr-saldo');trSaldo.textContent=saldoAnterior===0?'Sem saldo anterior':`${saldoAnterior>=0?'+ ':''}${fmt(saldoAnterior)} trazidos do mês anterior`;trSaldo.className=`metric-trend ${saldoAnterior>=0?'trend-up':'trend-down'}`;
   renderAlertas('alertas-topo');
   const g=gastoPorCat(),dc=cats.filter(c=>c.tipo==='despesa'&&c.orc>0);
   document.getElementById('resumo-orc').innerHTML=dc.length?dc.map(c=>{
