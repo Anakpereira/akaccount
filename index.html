@@ -96,6 +96,25 @@ tr:hover td{background:#fafafa}
 }
 @media(max-width:480px){.logo{font-size:19px}.logo-sub{font-size:11px}.mgrid{gap:8px}.mgrid .metric:last-child{grid-column:1/-1}.fab{right:16px}.row input,.row select{min-width:140px}th,td{padding:9px 7px}.card{border-radius:14px}.invoice-details table{min-width:620px}}
 @media(max-width:600px){.calendar-grid{gap:3px}.cal-day{min-height:72px;padding:4px;border-radius:7px}.cal-event{font-size:0;height:7px;padding:0}.cal-num{font-size:11px}}
+/* VISUAL 2026 */
+:root{--primary:#3563E9;--primary-dark:#172554;--primary-soft:#EEF3FF;--positive:#0F9F7F;--positive-soft:#EAFBF6;--danger:#E5484D;--danger-soft:#FFF0F0;--warning:#E59A18;--warning-soft:#FFF7E8;--purple:#7657D5;--teal:#0E8E9B;--surface:#FFFFFF;--page:#F3F6FB;--text:#172033;--muted:#748094;--border:#E7EBF2}
+body{background:radial-gradient(circle at 80% -10%,#E9EFFF 0,transparent 32%),linear-gradient(180deg,#F7F9FD,#F1F5FA);letter-spacing:-.005em}
+.app{padding-top:18px}.panel{animation:panel-in .22s ease both}@keyframes panel-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.page-heading{margin:2px 0 18px}.page-title{font-size:26px;line-height:1.15;font-weight:750;letter-spacing:-.035em;color:#172033}.page-description{font-size:13px;color:var(--muted);margin-top:5px}
+.month-toolbar{border:1px solid rgba(218,225,236,.9)!important;border-radius:15px!important;padding:10px 13px!important;box-shadow:0 6px 18px rgba(38,55,85,.055);background:rgba(255,255,255,.88)!important;backdrop-filter:blur(14px)}
+.card{border-color:rgba(222,228,238,.9);border-radius:18px;box-shadow:0 7px 25px rgba(38,55,85,.055);transition:box-shadow .2s,transform .2s}.card:hover{box-shadow:0 10px 30px rgba(38,55,85,.075)}
+.metric{border:0;border-radius:17px;box-shadow:0 7px 22px rgba(38,55,85,.065);min-height:112px}.mval{font-size:22px;letter-spacing:-.035em;font-variant-numeric:tabular-nums}.mlabel{text-transform:uppercase;font-size:10px;letter-spacing:.055em;font-weight:700}
+.stitle{color:#6D788B;font-size:10px;letter-spacing:.085em}.pbar{background:#EEF1F5;height:7px}
+.btn{border-color:#DFE4EC;border-radius:10px;font-weight:600;color:#344054;box-shadow:0 1px 2px rgba(16,24,40,.03)}.btn:hover{transform:translateY(-1px);box-shadow:0 5px 12px rgba(38,55,85,.08)}.btn-b{background:var(--primary);border-color:var(--primary);color:#fff}.btn-b:hover{background:#294FCC;color:#fff}.btn-g{background:#F0FBF7;border-color:#CDEFE3;color:#087760}.btn-r{background:#FFF6F6;border-color:#FFDADA}.btn-a{background:#FFF9ED;border-color:#F9DEAA}
+.row input,.row select,input[type="month"],input[type="date"]{border-color:#DDE3EC;border-radius:10px;background:#FCFDFE;transition:border-color .15s,box-shadow .15s}.row input:hover,.row select:hover{border-color:#BCC7D8}
+th{background:#F8FAFC;color:#7B8798;text-transform:uppercase;font-size:10px;letter-spacing:.045em}th:first-child{border-radius:9px 0 0 9px}th:last-child{border-radius:0 9px 9px 0}td{height:46px}tr:hover td{background:#F8FAFE}
+.badge{padding:4px 9px;font-weight:650}.empty{background:#FAFBFD;border:1px dashed #DCE3EC;border-radius:12px;margin:5px 0;color:#98A2B3}
+.form-card{border-top:0;position:relative;overflow:hidden}.form-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--primary),var(--purple))}
+.alert-banner,.warn-banner,.demo-banner{border-radius:13px;box-shadow:0 4px 12px rgba(38,55,85,.035)}
+.fab{background:linear-gradient(135deg,#4775F5,#5A46D6);box-shadow:0 12px 30px rgba(53,99,233,.32)}.action-sheet{border:1px solid var(--border)}.action-item{border-radius:14px;transition:.18s}.action-item:hover{transform:translateY(-2px);box-shadow:0 7px 16px rgba(38,55,85,.08)}
+@media(min-width:900px){.side-nav{width:238px;background:linear-gradient(180deg,#18233A 0%,#111A2D 100%);border-right:0;box-shadow:8px 0 30px rgba(17,26,45,.08)}.app{margin-left:238px;max-width:1240px;padding:24px 32px}.side-brand .logo{color:#fff}.side-brand .logo-sub{color:#8491A8}.side-brand .icon-box{background:rgba(92,122,255,.18);color:#fff}.side-group{color:#68758C}.nav-link{color:#AAB4C5;border:1px solid transparent}.nav-link:hover{background:rgba(255,255,255,.055);color:#fff}.nav-link.active{background:linear-gradient(90deg,rgba(70,109,245,.28),rgba(102,79,218,.12));border-color:rgba(123,149,255,.22);color:#fff}.topbar{padding-top:0}.page-heading{display:block}}
+@media(max-width:899px){.page-title{font-size:22px}.page-heading{margin:8px 2px 14px}.month-toolbar{position:sticky;top:5px;z-index:80}.bottom-nav{height:70px;border-top-color:#E4E9F1;box-shadow:0 -8px 24px rgba(38,55,85,.07);border-radius:18px 18px 0 0}.bottom-link{transition:.15s}.bottom-link.active{color:var(--primary)}.card{border-radius:16px}.metric{min-height:100px}}
+@media(max-width:480px){.app{padding:.65rem}.page-description{font-size:12px}.month-toolbar{padding:8px!important}.month-toolbar>div:last-child{width:100%;justify-content:space-between}.mval{font-size:19px}.metric{min-height:94px}.row .btn{width:100%}}
 /* LOGIN */
 #login-screen{position:fixed;inset:0;background:linear-gradient(145deg,#F8FAFD 0%,#EAF2FF 100%);display:flex;align-items:center;justify-content:center;z-index:1000}
 .login-box{background:#fff;border:1px solid rgba(255,255,255,.8);border-radius:20px;padding:2.5rem 2rem;max-width:380px;width:90%;box-shadow:0 18px 50px rgba(30,58,95,.13);text-align:center}
@@ -196,8 +215,13 @@ tr:hover td{background:#fafafa}
   <div class="tab" onclick="showTab('exportar')">⬇️ Exportar</div>
 </div>
 
+<div class="page-heading">
+  <div class="page-title" id="page-title">Resumo financeiro</div>
+  <div class="page-description" id="page-description">Acompanhe seu mês e tome decisões com mais clareza.</div>
+</div>
+
 <!-- NAVEGAÇÃO MENSAL GLOBAL -->
-<div style="display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e8e8e8;border-top:none;border-radius:0 0 12px 12px;padding:8px 16px;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+<div class="month-toolbar" style="display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e8e8e8;border-top:none;border-radius:0 0 12px 12px;padding:8px 16px;margin-bottom:16px;flex-wrap:wrap;gap:8px">
   <div style="display:flex;align-items:center;gap:8px">
     <button class="btn" onclick="mesAnterior()" style="padding:5px 12px;font-size:16px">‹</button>
     <span id="mes-label" style="font-size:15px;font-weight:600;color:#1a1a1a;min-width:130px;text-align:center"></span>
@@ -705,6 +729,8 @@ const fmt=v=>'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,max
 // Impede que textos digitados sejam interpretados como HTML ao renderizar as tabelas.
 const cleanText=v=>String(v??'').replace(/[<>\u0000-\u001F]/g,'').trim().slice(0,160);
 const tabNames=['resumo','lancamentos','orcamento','grafico','calendario','previsao','objetivos','cartoes','metas','investimentos','dividas','contas','exportar'];
+const PAGE_META={resumo:['Resumo financeiro','Acompanhe seu mês e tome decisões com mais clareza.'],lancamentos:['Lançamentos','Registre, agende e organize suas movimentações.'],orcamento:['Orçamento','Defina limites e acompanhe seus gastos por categoria.'],grafico:['Evolução financeira','Compare receitas, despesas e saldo ao longo do tempo.'],calendario:['Calendário financeiro','Visualize compromissos, faturas e recebimentos por data.'],previsao:['Previsão de saldo','Antecipe o resultado dos próximos seis meses.'],objetivos:['Objetivos','Planeje conquistas e acompanhe o prazo estimado.'],cartoes:['Cartões e faturas','Controle compras, parcelas, limites e pagamentos.'],metas:['Metas financeiras','Acompanhe quanto já guardou para cada plano.'],investimentos:['Investimentos','Consolide aplicações, vencimentos e rentabilidade.'],dividas:['Dívidas','Veja compromissos e parcelas ainda existentes.'],contas:['Contas bancárias','Concilie saldos e registre transferências.'],exportar:['Exportar e backup','Baixe seus dados e mantenha uma cópia de segurança.']};
+function updatePageHeading(name){const meta=PAGE_META[name]||PAGE_META.resumo,ttl=document.getElementById('page-title'),desc=document.getElementById('page-description');if(ttl)ttl.textContent=meta[0];if(desc)desc.textContent=meta[1];}
 function initEmpty(){cats=CAT_DEFAULTS.map(c=>({...c}));lancamentos=[];recorrentes=[];agendados=[];metas=[];investimentos=[];dividas=[];cartoes=[];debitos=[];faturas=[];objetivos=[];contas=[];transferencias=[];fechamentos=[];}
 function sanitizeCollections(){
   const fields=(arr,names)=>arr.forEach(item=>names.forEach(name=>{if(typeof item?.[name]==='string')item[name]=cleanText(item[name]);}));
@@ -847,6 +873,7 @@ function showTab(name){
   document.querySelectorAll('.tab')[tabNames.indexOf(name)].classList.add('active');
   document.getElementById(name).classList.add('active');
   document.querySelectorAll('[data-tab]').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  updatePageHeading(name);
   window.scrollTo({top:0,behavior:'smooth'});
   if(name==='resumo')updateResumo();
   if(name==='orcamento'){renderOrcCats();renderAlertas('alertas-orc');}
