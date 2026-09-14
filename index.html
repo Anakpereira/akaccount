@@ -1049,6 +1049,16 @@ function updateCCSel(){const sel=document.getElementById('db-cc');sel.innerHTML=
 
 function addLanc(){const tipo=document.getElementById('l-tipo').value,desc=cleanText(document.getElementById('l-desc').value),cat=cleanText(document.getElementById('l-cat').value),val=parseFloat(document.getElementById('l-val').value),data=document.getElementById('l-data').value||new Date().toISOString().split('T')[0];if(!desc||isNaN(val)||val<=0)return;lancamentos.unshift({tipo,desc,cat,valor:val,data});document.getElementById('l-desc').value='';document.getElementById('l-val').value='';saveData();renderLanc();updateResumo();}
 function delLanc(i){const l=lancamentos[i];if(l?.recorrenteId){const r=recorrentes.find(x=>x.id===l.recorrenteId);if(r){r.ignorados=Array.isArray(r.ignorados)?r.ignorados:[];if(!r.ignorados.includes(l.data.slice(0,7)))r.ignorados.push(l.data.slice(0,7));}}lancamentos.splice(i,1);saveData();renderLanc();updateResumo();}
+function editLanc(i){
+  const l=lancamentos[i];if(!l)return;
+  const desc=prompt('Descrição:',l.desc);if(desc===null)return;
+  const valorTexto=prompt('Valor (R$):',Number(l.valor).toFixed(2).replace('.',','));if(valorTexto===null)return;
+  const valor=valorMonetarioEmCentavos(valorTexto)/100;if(valor<=0)return alert('Informe um valor válido.');
+  const data=prompt('Data (AAAA-MM-DD):',l.data);if(data===null)return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(data))return alert('Informe a data no formato AAAA-MM-DD.');
+  const cat=prompt('Categoria:',l.cat);if(cat===null)return;
+  Object.assign(l,{desc:cleanText(desc),valor,data,cat:cleanText(cat)});saveData();renderLanc();updateResumo();toast('✓ Lançamento atualizado.');
+}
 function dataRecorrente(rec,ym){
   const[y,m]=ym.split('-').map(Number),ultimo=new Date(y,m,0).getDate(),dia=Math.min(Math.max(1,Number(rec.dia)||1),ultimo);
   return `${ym}-${String(dia).padStart(2,'0')}`;
@@ -1127,7 +1137,7 @@ function renderLanc(){
       <td>${catChip(l.cat)}</td>
       <td><span class="badge ${l.tipo==='receita'?'bg':'br'}">${l.tipo}</span></td>
       <td style="font-weight:500;color:${l.tipo==='receita'?'#0F6E56':'#A32D2D'}">${fmt(l.valor)}</td>
-      <td><button class="btn btn-r" onclick="delLanc(${i})">🗑</button></td>
+      <td><div style="display:flex;gap:5px"><button class="btn btn-b" onclick="editLanc(${i})">✎</button><button class="btn btn-r" onclick="delLanc(${i})">🗑</button></div></td>
     </tr>`;}).join('')+'</tbody></table></div>';
 }
 
@@ -1144,6 +1154,17 @@ function addDebito(){
   toast(`✓ Compra lançada. Primeira parcela na fatura ${prox}.`);
 }
 function delDebito(i){debitos.splice(i,1);saveData();renderDebitosTab();renderFaturas();renderListaCC();updateResumo();}
+function editDebito(i){
+  const d=debitos[i];if(!d)return;
+  const desc=prompt('Descrição da compra:',d.desc);if(desc===null)return;
+  const valorTexto=prompt('Valor total (R$):',Number(d.valor).toFixed(2).replace('.',','));if(valorTexto===null)return;
+  const valor=valorMonetarioEmCentavos(valorTexto)/100;if(valor<=0)return alert('Informe um valor válido.');
+  const parcelas=parseInt(prompt('Número de parcelas:',d.parc));if(!Number.isFinite(parcelas)||parcelas<1)return alert('Informe uma quantidade válida.');
+  const data=prompt('Data da compra (AAAA-MM-DD):',d.data);if(data===null)return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(data))return alert('Informe a data no formato AAAA-MM-DD.');
+  const cat=prompt('Categoria:',d.cat);if(cat===null)return;
+  Object.assign(d,{desc:cleanText(desc),valor,parc:parcelas,valorParc:Math.floor((valor/parcelas)*100)/100,data,cat:cleanText(cat)});saveData();renderDebitosTab();renderFaturas();renderTodosDebitos();renderListaCC();updateResumo();toast('✓ Compra atualizada.');
+}
 function renderDebitosTab(){
   const el=document.getElementById('tab-debitos');
   const dm=debitos.filter(d=>d.data&&d.data.startsWith(mesSel));
@@ -1157,7 +1178,7 @@ function renderDebitosTab(){
       <td>${fmt(d.valor)}</td>
       <td><span class="badge bb">${d.parc}x</span></td>
       <td style="color:#A32D2D;font-weight:500">${fmt(d.valorParc)}</td>
-      <td><button class="btn btn-r" onclick="delDebito(${i})">🗑</button></td>
+      <td><div style="display:flex;gap:5px"><button class="btn btn-b" onclick="editDebito(${i})">✎</button><button class="btn btn-r" onclick="delDebito(${i})">🗑</button></div></td>
     </tr>`;}).join('')+'</tbody></table></div>';
 }
 function registroFatura(ccIdx,mes=mesSel){return faturas.find(f=>f.ccIdx===ccIdx&&f.mes===mes);}
@@ -1264,7 +1285,7 @@ function renderTodosDebitos(){
       <td style="white-space:normal">${p.desc}</td><td>${catChip(p.cat)}</td>
       <td><span class="badge bb">${p.numParcela}/${p.parc}</span></td>
       <td style="color:#A32D2D;font-weight:600">${fmt(p.valorParc)}</td><td>${fmt(p.valor)}</td>
-      <td><button class="btn btn-r" onclick="removerDebitoHistorico(${p.debitoIdx})" title="Excluir a compra e todas as parcelas">🗑</button></td>
+      <td><div style="display:flex;gap:5px"><button class="btn btn-b" onclick="editDebito(${p.debitoIdx})" title="Editar a compra e todas as parcelas">✎</button><button class="btn btn-r" onclick="removerDebitoHistorico(${p.debitoIdx})" title="Excluir a compra e todas as parcelas">🗑</button></div></td>
     </tr>`).join('')+'</tbody></table></div>';
 }
 function limparFiltrosDebitos(){
@@ -1516,10 +1537,10 @@ Object.assign(window,{
   loginGoogle,logout,loadDemo,clearAll,syncNow,
   showTab,showStab,abrirAcoesRapidas,abrirMais,fecharModal,irMenu,atalhoNovo,
   mesAnterior,mesProximo,irParaMes,irHoje,
-  addLanc,delLanc,addRecorrente,toggleRecorrente,delRecorrente,updateRecCatSel,
+  addLanc,delLanc,editLanc,addRecorrente,toggleRecorrente,delRecorrente,updateRecCatSel,
   addAgendado,pagarAgendado,reabrirAgendado,delAgendado,toggleAgendamentoFim,
   addCat,delCat,atualizarOrcamento,
-  addCartao,delCartao,addDebito,delDebito,renderTodosDebitos,limparFiltrosDebitos,removerDebitoHistorico,fecharFatura,reabrirFatura,pagarFatura,
+  addCartao,delCartao,addDebito,delDebito,editDebito,renderTodosDebitos,limparFiltrosDebitos,removerDebitoHistorico,fecharFatura,reabrirFatura,pagarFatura,
   addMeta,aporte,delMeta,
   addInvest,delInvest,preencherSelic,calcTaxaCDI,
   addDivida,delDiv,
