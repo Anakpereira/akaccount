@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>AKAccount — Testes</title><style>body{font:14px system-ui;max-width:760px;margin:40px auto;padding:20px;color:#172033}.ok{color:#087760}.fail{color:#b42318}li{padding:6px}</style></head>
+<body><h1>Testes dos cálculos do AKAccount</h1><p id="summary"></p><ol id="results"></ol><script>
+const tests=[];function test(name,fn){try{fn();tests.push({name,ok:true})}catch(e){tests.push({name,ok:false,error:e.message})}}function eq(actual,expected){if(JSON.stringify(actual)!==JSON.stringify(expected))throw new Error(`esperado ${JSON.stringify(expected)}, recebido ${JSON.stringify(actual)}`)}
+function addMonths(dateStr,offset){const[y,m,d]=dateStr.split('-').map(Number),dt=new Date(y,m-1+offset,1),last=new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate();return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(Math.min(d,last)).padStart(2,'0')}`}
+function parcelas(valor,qtd,data){const total=Math.round(valor*100),base=Math.floor(total/qtd),resto=total-base*qtd;return Array.from({length:qtd},(_,i)=>({data:addMonths(data,i+1),valor:(base+(i===qtd-1?resto:0))/100}))}
+function cents(v){const t=String(v).trim(),n=Number(t.includes(',')?t.replace(/\./g,'').replace(',','.'):t);return Number.isFinite(n)?Math.round(n*100):0}
+test('R$ 700 não perde um centavo',()=>eq(cents('700')/100,700));
+test('Valor brasileiro é convertido',()=>eq(cents('1.234,56')/100,1234.56));
+test('Primeira parcela fica no mês seguinte',()=>eq(parcelas(300,3,'2026-09-10').map(x=>x.data),['2026-10-10','2026-11-10','2026-12-10']));
+test('Diferença de centavos vai para a última parcela',()=>eq(parcelas(100,3,'2026-09-10').map(x=>x.valor),[33.33,33.33,33.34]));
+test('Dia 31 ajusta fevereiro',()=>eq(addMonths('2027-01-31',1),'2027-02-28'));
+test('Saldo acumula entre meses',()=>{const meses=[{r:3000,d:1000,f:500},{r:2500,d:1200,f:600}];eq(meses.reduce((s,m)=>s+m.r-m.d-m.f,0),2200)});
+const ok=tests.filter(t=>t.ok).length;document.getElementById('summary').innerHTML=`<b>${ok}/${tests.length}</b> testes aprovados.`;document.getElementById('results').innerHTML=tests.map(t=>`<li class="${t.ok?'ok':'fail'}">${t.ok?'✓':'✗'} ${t.name}${t.error?' — '+t.error:''}</li>`).join('');
+</script></body></html>
