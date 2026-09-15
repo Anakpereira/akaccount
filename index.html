@@ -941,7 +941,7 @@ function atalhoNovo(tipo){
   }
   showTab('investimentos');setTimeout(()=>document.getElementById('i-nome').focus(),100);
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){fecharModal('quick-modal');fecharModal('more-modal');}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){fecharModal('quick-modal');fecharModal('more-modal');fecharDataModal();}});
 function showStab(parent,idx){
   const p=document.getElementById(parent);
   p.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));
