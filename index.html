@@ -112,6 +112,7 @@ th{background:#F8FAFC;color:#7B8798;text-transform:uppercase;font-size:10px;lett
 .form-card{border-top:0;position:relative;overflow:hidden}.form-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--primary),var(--purple))}
 .alert-banner,.warn-banner,.demo-banner{border-radius:13px;box-shadow:0 4px 12px rgba(38,55,85,.035)}
 .fab{background:linear-gradient(135deg,#4775F5,#5A46D6);box-shadow:0 12px 30px rgba(53,99,233,.32)}.action-sheet{border:1px solid var(--border)}.action-item{border-radius:14px;transition:.18s}.action-item:hover{transform:translateY(-2px);box-shadow:0 7px 16px rgba(38,55,85,.08)}
+.global-search{position:relative;margin:-7px 0 16px}.global-search input{width:100%;height:44px;border:1px solid #DDE3EC;border-radius:13px;padding:0 15px 0 42px;background:rgba(255,255,255,.9);box-shadow:0 5px 16px rgba(38,55,85,.045);font-size:13px}.global-search::before{content:'⌕';position:absolute;left:15px;top:8px;font-size:22px;color:var(--muted);z-index:1}.search-results{position:absolute;left:0;right:0;top:49px;z-index:300;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 45px rgba(23,32,51,.16);max-height:360px;overflow:auto;display:none}.search-results.show{display:block}.search-item{padding:11px 14px;border-bottom:1px solid #EEF1F5;cursor:pointer}.search-item:hover{background:var(--primary-soft)}.search-item:last-child{border-bottom:0}
 @media(min-width:900px){.side-nav{width:238px;background:linear-gradient(180deg,#18233A 0%,#111A2D 100%);border-right:0;box-shadow:8px 0 30px rgba(17,26,45,.08)}.app{margin-left:238px;max-width:1240px;padding:24px 32px}.side-brand .logo{color:#fff}.side-brand .logo-sub{color:#8491A8}.side-brand .icon-box{background:rgba(92,122,255,.18);color:#fff}.side-group{color:#68758C}.nav-link{color:#AAB4C5;border:1px solid transparent}.nav-link:hover{background:rgba(255,255,255,.055);color:#fff}.nav-link.active{background:linear-gradient(90deg,rgba(70,109,245,.28),rgba(102,79,218,.12));border-color:rgba(123,149,255,.22);color:#fff}.topbar{padding-top:0}.page-heading{display:block}}
 @media(max-width:899px){.page-title{font-size:22px}.page-heading{margin:8px 2px 14px}.month-toolbar{position:sticky;top:5px;z-index:80}.bottom-nav{height:70px;border-top-color:#E4E9F1;box-shadow:0 -8px 24px rgba(38,55,85,.07);border-radius:18px 18px 0 0}.bottom-link{transition:.15s}.bottom-link.active{color:var(--primary)}.card{border-radius:16px}.metric{min-height:100px}}
 @media(max-width:480px){.app{padding:.65rem}.page-description{font-size:12px}.month-toolbar{padding:8px!important}.month-toolbar>div:last-child{width:100%;justify-content:space-between}.mval{font-size:19px}.metric{min-height:94px}.row .btn{width:100%}}
@@ -219,6 +220,7 @@ th{background:#F8FAFC;color:#7B8798;text-transform:uppercase;font-size:10px;lett
   <div class="page-title" id="page-title">Resumo financeiro</div>
   <div class="page-description" id="page-description">Acompanhe seu mês e tome decisões com mais clareza.</div>
 </div>
+<div class="global-search"><input id="global-search-input" type="search" placeholder="Pesquisar lançamentos, contas, cartões ou categorias..." oninput="renderBuscaGlobal(this.value)" autocomplete="off" /><div id="global-search-results" class="search-results"></div></div>
 
 <!-- NAVEGAÇÃO MENSAL GLOBAL -->
 <div class="month-toolbar" style="display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e8e8e8;border-top:none;border-radius:0 0 12px 12px;padding:8px 16px;margin-bottom:16px;flex-wrap:wrap;gap:8px">
@@ -508,12 +510,14 @@ th{background:#F8FAFC;color:#7B8798;text-transform:uppercase;font-size:10px;lett
 
 <!-- CONTAS BANCÁRIAS -->
 <div id="contas" class="panel">
+  <div class="mgrid" id="patrimonio-resumo"></div>
   <div class="card form-card">
     <div class="stitle">Cadastrar conta ou carteira</div>
     <div class="row"><input id="ct-nome" type="text" placeholder="Nome (ex.: Nubank)" /><select id="ct-tipo"><option>Conta-corrente</option><option>Poupança</option><option>Carteira digital</option><option>Dinheiro</option></select><input id="ct-inicial" type="number" step="0.01" placeholder="Saldo inicial" /><input id="ct-real" type="number" step="0.01" placeholder="Saldo real hoje" /><button class="btn btn-b" onclick="addConta()">+ Cadastrar</button></div>
   </div>
   <div class="card"><div class="stitle">Transferir entre contas</div><div class="row"><select id="tr-origem"></select><span>→</span><select id="tr-destino"></select><input id="tr-valor" type="number" step="0.01" placeholder="Valor (R$)" /><input id="tr-data" type="date" /><button class="btn btn-b" onclick="addTransferencia()">Transferir</button></div></div>
   <div id="lista-contas"><div class="empty">Nenhuma conta cadastrada.</div></div>
+  <div class="card"><div class="stitle">Evolução do patrimônio nos fechamentos</div><div id="patrimonio-historico"><div class="empty">Feche um mês para criar o primeiro histórico.</div></div></div>
 </div>
 
 <!-- EXPORTAR -->
@@ -885,6 +889,16 @@ function showTab(name){
   if(name==='lancamentos')updateLancCatSel();
   if(name==='investimentos')renderAlertasInvest();
 }
+function renderBuscaGlobal(valor){
+  const el=document.getElementById('global-search-results'),q=cleanText(valor).toLocaleLowerCase('pt-BR');if(!el)return;if(q.length<2){el.classList.remove('show');el.innerHTML='';return;}
+  const itens=[];lancamentos.forEach(l=>{if(`${l.desc} ${l.cat}`.toLocaleLowerCase('pt-BR').includes(q))itens.push({tipo:'Lançamento',texto:l.desc,sub:`${l.data.split('-').reverse().join('/')} · ${fmt(l.valor)}`,tab:'lancamentos',mes:l.data.slice(0,7)});});
+  debitos.forEach(d=>{if(`${d.desc} ${d.cat} ${cartoes[d.ccIdx]?.nome||''}`.toLocaleLowerCase('pt-BR').includes(q))itens.push({tipo:'Cartão',texto:d.desc,sub:`${cartoes[d.ccIdx]?.nome||''} · ${fmt(d.valor)}`,tab:'cartoes',mes:d.data.slice(0,7)});});
+  agendados.forEach(a=>{if(`${a.desc} ${a.cat}`.toLocaleLowerCase('pt-BR').includes(q))itens.push({tipo:'Agendada',texto:a.desc,sub:`Vence ${a.venc.split('-').reverse().join('/')} · ${fmt(a.valor)}`,tab:'lancamentos',mes:a.venc.slice(0,7)});});
+  recorrentes.forEach(r=>{if(`${r.desc} ${r.cat}`.toLocaleLowerCase('pt-BR').includes(q))itens.push({tipo:'Recorrência',texto:r.desc,sub:`Todo dia ${r.dia} · ${fmt(r.valor)}`,tab:'lancamentos',mes:mesSel});});
+  contas.forEach(c=>{if(`${c.nome} ${c.tipo}`.toLocaleLowerCase('pt-BR').includes(q))itens.push({tipo:'Conta',texto:c.nome,sub:c.tipo,tab:'contas',mes:mesSel});});cartoes.forEach(c=>{if(c.nome.toLocaleLowerCase('pt-BR').includes(q))itens.push({tipo:'Cartão',texto:c.nome,sub:`Limite ${fmt(c.lim)}`,tab:'cartoes',mes:mesSel});});
+  el.innerHTML=itens.length?itens.slice(0,20).map(x=>`<div class="search-item" onclick="abrirResultadoBusca('${x.tab}','${x.mes}')"><div style="font-weight:650">${x.texto} <span class="badge bb">${x.tipo}</span></div><div style="font-size:11px;color:var(--muted);margin-top:3px">${x.sub}</div></div>`).join(''):'<div class="empty" style="margin:10px">Nenhum resultado encontrado.</div>';el.classList.add('show');
+}
+function abrirResultadoBusca(tab,mes){if(mes){mesSel=mes;atualizarNavMes();renderTudo();}showTab(tab);const input=document.getElementById('global-search-input');input.value='';document.getElementById('global-search-results').classList.remove('show');}
 function abrirAcoesRapidas(){document.getElementById('quick-modal').classList.add('show');document.body.style.overflow='hidden';}
 function abrirMais(){document.getElementById('more-modal').classList.add('show');document.body.style.overflow='hidden';}
 function fecharModal(id){document.getElementById(id).classList.remove('show');document.body.style.overflow='';}
@@ -1188,16 +1202,23 @@ function addRecorrente(){
   gerarRecorrentesMes(mesSel);saveData();renderRecorrentes();renderLanc();updateResumo();
 }
 function toggleRecorrente(i){recorrentes[i].ativo=!recorrentes[i].ativo;if(recorrentes[i].ativo)gerarRecorrentesMes(mesSel);saveData();renderRecorrentes();renderLanc();updateResumo();}
+function editRecorrente(i){
+  const r=recorrentes[i];if(!r)return;const desc=prompt('Descrição:',r.desc);if(desc===null)return;const valorTexto=prompt('Valor mensal (R$):',Number(r.valor).toFixed(2).replace('.',','));if(valorTexto===null)return;const valor=valorMonetarioEmCentavos(valorTexto)/100;if(valor<=0)return alert('Informe um valor válido.');const dia=parseInt(prompt('Dia do mês:',r.dia));if(!Number.isFinite(dia)||dia<1||dia>31)return alert('Informe um dia entre 1 e 31.');const cat=prompt('Categoria:',r.cat);if(cat===null)return;const inicio=prompt('Mês inicial (AAAA-MM):',r.inicio);if(inicio===null)return;const fim=prompt('Mês final (AAAA-MM) ou vazio para sem término:',r.fim||'');if(fim===null)return;if(fim&&fim<inicio)return alert('O término não pode ser anterior ao início.');
+  Object.assign(r,{desc:cleanText(desc),valor,dia,cat:cleanText(cat),inicio,fim:fim||null});
+  if(confirm('Atualizar também os lançamentos desta recorrência a partir do mês selecionado?'))lancamentos.filter(l=>l.recorrenteId===r.id&&l.data.slice(0,7)>=mesSel).forEach(l=>Object.assign(l,{desc:r.desc,valor:r.valor,cat:r.cat,data:dataRecorrente(r,l.data.slice(0,7))}));
+  saveData();renderRecorrentes();renderLanc();updateResumo();toast('✓ Recorrência atualizada.');
+}
 function delRecorrente(i){if(!confirm('Excluir esta recorrência? Os lançamentos já gerados serão mantidos.'))return;recorrentes.splice(i,1);saveData();renderRecorrentes();}
 function renderRecorrentes(){
   const el=document.getElementById('lista-recorrentes');if(!el)return;
   if(!recorrentes.length){el.innerHTML='<div class="empty" style="padding:1rem">Nenhum lançamento recorrente.</div>';return;}
-  el.innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>Descrição</th><th>Tipo</th><th>Categoria</th><th>Valor</th><th>Todo dia</th><th>Período</th><th>Status</th><th></th></tr></thead><tbody>'+recorrentes.map((r,i)=>`<tr><td style="font-weight:500;white-space:normal">${r.desc}</td><td><span class="badge ${r.tipo==='receita'?'bg':'br'}">${r.tipo}</span></td><td>${catChip(r.cat)}</td><td style="font-weight:600">${fmt(r.valor)}</td><td>${r.dia}</td><td>${r.inicio.split('-').reverse().join('/')}${r.fim?' até '+r.fim.split('-').reverse().join('/'):' · sem término'}</td><td><span class="badge ${r.ativo?'bg':''}">${r.ativo?'Ativo':'Pausado'}</span></td><td><div style="display:flex;gap:5px"><button class="btn ${r.ativo?'btn-a':'btn-g'}" onclick="toggleRecorrente(${i})">${r.ativo?'Pausar':'Ativar'}</button><button class="btn btn-r" onclick="delRecorrente(${i})">🗑</button></div></td></tr>`).join('')+'</tbody></table></div>';
+  el.innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>Descrição</th><th>Tipo</th><th>Categoria</th><th>Valor</th><th>Todo dia</th><th>Período</th><th>Status</th><th></th></tr></thead><tbody>'+recorrentes.map((r,i)=>`<tr><td style="font-weight:500;white-space:normal">${r.desc}</td><td><span class="badge ${r.tipo==='receita'?'bg':'br'}">${r.tipo}</span></td><td>${catChip(r.cat)}</td><td style="font-weight:600">${fmt(r.valor)}</td><td>${r.dia}</td><td>${r.inicio.split('-').reverse().join('/')}${r.fim?' até '+r.fim.split('-').reverse().join('/'):' · sem término'}</td><td><span class="badge ${r.ativo?'bg':''}">${r.ativo?'Ativo':'Pausado'}</span></td><td><div style="display:flex;gap:5px"><button class="btn btn-b" onclick="editRecorrente(${i})">✎</button><button class="btn ${r.ativo?'btn-a':'btn-g'}" onclick="toggleRecorrente(${i})">${r.ativo?'Pausar':'Ativar'}</button><button class="btn btn-r" onclick="delRecorrente(${i})">🗑</button></div></td></tr>`).join('')+'</tbody></table></div>';
 }
 function hojeLocal(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function toggleAgendamentoFim(){document.getElementById('ag-fim-wrap').style.display=document.getElementById('ag-repetir').value==='mensal'?'block':'none';}
+function totalPagoAgendado(a){if(Array.isArray(a.pagamentos))return a.pagamentos.reduce((s,p)=>s+Number(p.valor||0),0);return a.status==='paga'?Number(a.valor||0):0;}
 function statusAgendado(a){
-  if(a.status==='paga')return{label:'Paga',classe:'bg'};
+  const pago=totalPagoAgendado(a);if(pago>=Number(a.valor||0))return{label:'Paga',classe:'bg'};if(pago>0)return{label:'Parcial',classe:'bp'};
   if(a.venc<hojeLocal())return{label:'Vencida',classe:'br'};
   if(a.venc===hojeLocal())return{label:'Pendente',classe:'ba'};
   return{label:'Agendada',classe:'bb'};
@@ -1215,11 +1236,15 @@ function addAgendado(){
   saveData();renderAgendados();renderOrcCats();updateResumo();toast(`✓ ${qtd} conta${qtd>1?'s':''} agendada${qtd>1?'s':''}.`);
 }
 function pagarAgendado(i){
-  const a=agendados[i];if(!a||!podeAlterarMes(a.venc.slice(0,7)))return;const data=prompt('Data do pagamento (AAAA-MM-DD):',hojeLocal());if(data===null)return;
+  const a=agendados[i];if(!a||!podeAlterarMes(a.venc.slice(0,7)))return;const restante=Math.max(0,a.valor-totalPagoAgendado(a)),valorTexto=prompt('Valor deste pagamento (R$):',restante.toFixed(2).replace('.',','));if(valorTexto===null)return;const valor=valorMonetarioEmCentavos(valorTexto)/100;if(valor<=0)return alert('Informe um valor válido.');const data=prompt('Data do pagamento (AAAA-MM-DD):',hojeLocal());if(data===null)return;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(data)||Number.isNaN(new Date(data+'T00:00:00').getTime()))return alert('Informe a data no formato AAAA-MM-DD.');
-  a.status='paga';a.dataPagamento=data;saveData();renderAgendados();renderAlertas('alertas-topo');toast('✓ Conta marcada como paga.');
+  a.pagamentos=Array.isArray(a.pagamentos)?a.pagamentos:[];a.pagamentos.push({valor,data});const pago=totalPagoAgendado(a);a.status=pago>=a.valor?'paga':'parcial';a.dataPagamento=data;saveData();renderAgendados();renderAlertas('alertas-topo');toast(pago>=a.valor?'✓ Conta paga.':'✓ Pagamento parcial registrado.');
 }
-function reabrirAgendado(i){const a=agendados[i];if(!a)return;a.status='agendada';a.dataPagamento=null;saveData();renderAgendados();renderAlertas('alertas-topo');}
+function reabrirAgendado(i){const a=agendados[i];if(!a)return;a.status='agendada';a.dataPagamento=null;a.pagamentos=[];saveData();renderAgendados();renderAlertas('alertas-topo');}
+function editAgendado(i){
+  const a=agendados[i];if(!a||!podeAlterarMes(a.venc.slice(0,7)))return;const desc=prompt('Descrição:',a.desc);if(desc===null)return;const valorTexto=prompt('Valor (R$):',Number(a.valor).toFixed(2).replace('.',','));if(valorTexto===null)return;const valor=valorMonetarioEmCentavos(valorTexto)/100;if(valor<=0)return alert('Informe um valor válido.');const venc=prompt('Vencimento (AAAA-MM-DD):',a.venc);if(venc===null||!/^\d{4}-\d{2}-\d{2}$/.test(venc))return;const cat=prompt('Categoria:',a.cat);if(cat===null)return;
+  const grupo=agendados.filter(x=>x.grupo===a.grupo),todas=grupo.length>1&&confirm('Aplicar descrição, categoria e valor também às outras ocorrências futuras?');Object.assign(a,{desc:cleanText(desc),valor,venc,cat:cleanText(cat)});if(todas)grupo.filter(x=>x.venc>=a.venc).forEach(x=>Object.assign(x,{desc:a.desc,valor:a.valor,cat:a.cat}));agendados.sort((x,y)=>x.venc.localeCompare(y.venc));saveData();renderAgendados();updateResumo();toast('✓ Agendamento atualizado.');
+}
 function delAgendado(i){
   const a=agendados[i];if(!a||!podeAlterarMes(a.venc.slice(0,7)))return;const grupo=agendados.filter(x=>x.grupo===a.grupo),todos=grupo.length>1&&confirm('Excluir também as outras ocorrências deste agendamento?');
   if(todos)agendados=agendados.filter(x=>x.grupo!==a.grupo);else agendados.splice(i,1);
@@ -1228,7 +1253,7 @@ function delAgendado(i){
 function renderAgendados(){
   const el=document.getElementById('lista-agendados');if(!el)return;
   if(!agendados.length){el.innerHTML='<div class="empty" style="padding:1rem">Nenhuma conta agendada.</div>';return;}
-  el.innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>Vencimento</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Status</th><th>Pagamento</th><th></th></tr></thead><tbody>'+agendados.map((a,i)=>{const s=statusAgendado(a);return`<tr><td>${a.venc.split('-').reverse().join('/')}</td><td style="font-weight:500;white-space:normal">${a.desc}</td><td>${catChip(a.cat)}</td><td style="font-weight:600;color:#A32D2D">${fmt(a.valor)}</td><td><span class="badge ${s.classe}">${s.label}</span></td><td>${a.dataPagamento?a.dataPagamento.split('-').reverse().join('/'):'—'}</td><td><div style="display:flex;gap:5px">${a.status==='paga'?`<button class="btn" onclick="reabrirAgendado(${i})">Reabrir</button>`:`<button class="btn btn-g" onclick="pagarAgendado(${i})">✓ Pagar</button>`}<button class="btn btn-r" onclick="delAgendado(${i})">🗑</button></div></td></tr>`;}).join('')+'</tbody></table></div>';
+  el.innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>Vencimento</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Status</th><th>Pagamento</th><th></th></tr></thead><tbody>'+agendados.map((a,i)=>{const s=statusAgendado(a),pago=totalPagoAgendado(a),quitada=pago>=a.valor;return`<tr><td>${a.venc.split('-').reverse().join('/')}</td><td style="font-weight:500;white-space:normal">${a.desc}</td><td>${catChip(a.cat)}</td><td style="font-weight:600;color:#A32D2D">${fmt(a.valor)}</td><td><span class="badge ${s.classe}">${s.label}</span></td><td>${pago?`${fmt(pago)}<br><small>Resta ${fmt(Math.max(0,a.valor-pago))}</small>`:'—'}</td><td><div style="display:flex;gap:5px"><button class="btn btn-b" onclick="editAgendado(${i})">✎</button>${quitada?`<button class="btn" onclick="reabrirAgendado(${i})">Reabrir</button>`:`<button class="btn btn-g" onclick="pagarAgendado(${i})">+ Pagamento</button>`}<button class="btn btn-r" onclick="delAgendado(${i})">🗑</button></div></td></tr>`;}).join('')+'</tbody></table></div>';
 }
 function renderLanc(){
   gerarRecorrentesMes(mesSel);
@@ -1294,9 +1319,10 @@ function vencimentoFatura(cartao,mes=mesSel){
   const[y,m]=mes.split('-').map(Number),ultimo=new Date(y,m,0).getDate(),dia=Math.min(Number(cartao.venc)||1,ultimo);
   return `${mes}-${String(dia).padStart(2,'0')}`;
 }
+function totalPagoFatura(reg){if(!reg)return 0;if(Array.isArray(reg.pagamentos))return reg.pagamentos.reduce((s,p)=>s+Number(p.valor||0),0);return Number(reg.valorPago||0);}
 function situacaoFatura(ccIdx,total){
   const reg=registroFatura(ccIdx);
-  if(reg?.status==='paga')return{status:'paga',label:'Paga',classe:'bg'};
+  const pago=totalPagoFatura(reg);if(pago>=total&&total>0)return{status:'paga',label:'Paga',classe:'bg'};if(pago>0)return{status:'parcial',label:'Parcial',classe:'bp'};
   if(reg?.status==='fechada')return{status:'fechada',label:'Fechada',classe:'bb'};
   const venc=vencimentoFatura(cartoes[ccIdx]);
   if(total>0&&new Date(venc+'T23:59:59')<new Date())return{status:'vencida',label:'Vencida',classe:'br'};
@@ -1311,21 +1337,21 @@ function fecharFatura(ccIdx){
 }
 function reabrirFatura(ccIdx){
   const reg=registroFatura(ccIdx);if(!reg)return;
-  if(reg.status==='paga'&&!confirm('Esta fatura está paga. Deseja reabri-la e remover o registro do pagamento?'))return;
+  if(totalPagoFatura(reg)>0&&!confirm('Deseja reabrir a fatura e remover todos os pagamentos registrados?'))return;
   const pos=faturas.indexOf(reg);faturas.splice(pos,1);saveData();renderFaturas();
 }
 function pagarFatura(ccIdx){
   if(!podeAlterarMes(mesSel))return;
   const total=parcelasNoMes().filter(p=>p.ccIdx===ccIdx).reduce((s,p)=>s+p.valorParc,0);
   if(total<=0)return alert('Esta fatura não possui valor para pagamento.');
-  const valorTexto=prompt('Valor pago (R$):',total.toFixed(2).replace('.',','));if(valorTexto===null)return;
-  const valor=parseFloat(valorTexto.replace(/\./g,'').replace(',','.'));
+  let reg=registroFatura(ccIdx),pago=totalPagoFatura(reg),restante=Math.max(0,total-pago);const valorTexto=prompt('Valor deste pagamento (R$):',restante.toFixed(2).replace('.',','));if(valorTexto===null)return;
+  const valor=valorMonetarioEmCentavos(valorTexto)/100;
   if(!Number.isFinite(valor)||valor<=0)return alert('Informe um valor de pagamento válido.');
   const hoje=new Date().toISOString().split('T')[0],data=prompt('Data do pagamento (AAAA-MM-DD):',hoje);if(data===null)return;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(data)||Number.isNaN(new Date(data+'T00:00:00').getTime()))return alert('Informe a data no formato AAAA-MM-DD.');
-  const reg=registroFatura(ccIdx),dados={ccIdx,mes:mesSel,status:'paga',valorFatura:total,valorPago:Math.round(valor*100)/100,dataPagamento:data,pagaEm:new Date().toISOString()};
-  if(reg)Object.assign(reg,dados);else faturas.push(dados);
-  saveData();renderFaturas();
+  if(!reg){reg={ccIdx,mes:mesSel,status:'fechada',valorFatura:total,pagamentos:[]};faturas.push(reg);}if(!Array.isArray(reg.pagamentos)){reg.pagamentos=[];if(reg.valorPago)reg.pagamentos.push({valor:reg.valorPago,data:reg.dataPagamento||data});}
+  reg.pagamentos.push({valor,data});pago=totalPagoFatura(reg);Object.assign(reg,{status:pago>=total?'paga':'parcial',valorFatura:total,valorPago:pago,dataPagamento:data,pagaEm:new Date().toISOString()});
+  saveData();renderFaturas();toast(pago>=total?'✓ Fatura paga.':'✓ Pagamento parcial registrado.');
 }
 function renderFaturas(){
   const el=document.getElementById('painel-fat');
@@ -1336,11 +1362,12 @@ function renderFaturas(){
     const total=ds.reduce((a,d)=>a+d.valorParc,0);
     const pct=c.lim>0?Math.min(100,Math.round(total/c.lim*100)):0;
     const col=pct>80?'#DC4C4C':pct>50?'#D98E04':'#16A085';
-    const sit=situacaoFatura(i,total),reg=registroFatura(i),venc=vencimentoFatura(c).split('-').reverse().join('/');
-    const pagamento=reg?.status==='paga'?`<div class="alert-banner" style="background:var(--positive-soft);border-color:#b7e2d5;color:var(--positive);margin-top:10px">✓ <span>Pago em <b>${reg.dataPagamento.split('-').reverse().join('/')}</b> · Valor pago: <b>${fmt(reg.valorPago)}</b></span></div>`:'';
+    const sit=situacaoFatura(i,total),reg=registroFatura(i),venc=vencimentoFatura(c).split('-').reverse().join('/'),pago=totalPagoFatura(reg),restante=Math.max(0,total-pago);
+    const pagamento=pago>0?`<div class="alert-banner" style="background:var(--positive-soft);border-color:#b7e2d5;color:var(--positive);margin-top:10px">✓ <span>Pago: <b>${fmt(pago)}</b> · Restante: <b>${fmt(restante)}</b>${reg?.dataPagamento?' · Último pagamento em '+reg.dataPagamento.split('-').reverse().join('/'):''}</span></div>`:'';
     const acoes=total>0?`<div style="display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap;margin-top:10px">
       ${sit.status==='aberta'||sit.status==='vencida'?`<button class="btn btn-b" onclick="fecharFatura(${i})">Fechar fatura</button>`:''}
-      ${sit.status!=='paga'?`<button class="btn btn-g" onclick="pagarFatura(${i})">✓ Pagar fatura</button>`:`<button class="btn" onclick="reabrirFatura(${i})">Reabrir</button>`}
+      ${sit.status!=='paga'?`<button class="btn btn-g" onclick="pagarFatura(${i})">+ Registrar pagamento</button>`:`<button class="btn" onclick="reabrirFatura(${i})">Reabrir</button>`}
+      ${sit.status==='parcial'?`<button class="btn" onclick="reabrirFatura(${i})">Limpar pagamentos</button>`:''}
       ${sit.status==='fechada'?`<button class="btn" onclick="reabrirFatura(${i})">Reabrir</button>`:''}
     </div>`:'';
     const rows=ds.length
@@ -1619,9 +1646,11 @@ function addTransferencia(){
   if(!origem||!destino||origem===destino||valor<=0)return alert('Selecione contas diferentes e informe um valor válido.');if(!podeAlterarMes(data.slice(0,7)))return;
   transferencias.push({id:`tr_${Date.now()}`,origem,destino,valor,data});document.getElementById('tr-valor').value='';saveData();renderContas();toast('✓ Transferência registrada.');
 }
+function patrimonioAtual(){const bancos=contas.reduce((s,c)=>s+Number(c.real||0),0),invest=investimentos.reduce((s,i)=>s+Number(i.valor||0),0),debitosDiv=dividas.reduce((s,d)=>s+Number(d.total||0),0);return{bancos,invest,dividas:debitosDiv,liquido:bancos+invest-debitosDiv};}
 function renderContas(){
-  const el=document.getElementById('lista-contas');if(!el)return;if(!contas.length){el.innerHTML='<div class="empty">Nenhuma conta cadastrada.</div>';return;}
-  el.innerHTML=contas.map((c,i)=>{const calc=saldoCalculadoConta(c.id),dif=Math.round((c.real-calc)*100)/100;return`<div class="card"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div style="font-weight:700;font-size:16px">🏦 ${c.nome}</div><div style="font-size:12px;color:var(--muted)">${c.tipo}</div></div><div style="display:flex;gap:18px;flex-wrap:wrap"><div><div class="mlabel">Calculado</div><b>${fmt(calc)}</b></div><div><div class="mlabel">Saldo real</div><b>${fmt(c.real)}</b></div><div><div class="mlabel">Diferença</div><b style="color:${dif===0?'var(--positive)':'var(--danger)'}">${fmt(dif)}</b></div></div><div style="display:flex;gap:6px"><button class="btn btn-b" onclick="atualizarSaldoReal(${i})">Conciliar</button><button class="btn btn-r" onclick="delConta(${i})">🗑</button></div></div></div>`;}).join('');
+  const el=document.getElementById('lista-contas'),res=document.getElementById('patrimonio-resumo'),hist=document.getElementById('patrimonio-historico');if(!el)return;const p=patrimonioAtual();if(res)res.innerHTML=`<div class="metric"><div class="mlabel">Saldos bancários</div><div class="mval b">${fmt(p.bancos)}</div></div><div class="metric"><div class="mlabel">Investimentos</div><div class="mval g">${fmt(p.invest)}</div></div><div class="metric"><div class="mlabel">Dívidas</div><div class="mval r">${fmt(p.dividas)}</div></div><div class="metric"><div class="mlabel">Patrimônio líquido</div><div class="mval ${p.liquido>=0?'g':'r'}">${fmt(p.liquido)}</div></div>`;
+  if(!contas.length)el.innerHTML='<div class="empty">Nenhuma conta cadastrada.</div>';else el.innerHTML=contas.map((c,i)=>{const calc=saldoCalculadoConta(c.id),dif=Math.round((c.real-calc)*100)/100;return`<div class="card"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div style="font-weight:700;font-size:16px">🏦 ${c.nome}</div><div style="font-size:12px;color:var(--muted)">${c.tipo}</div></div><div style="display:flex;gap:18px;flex-wrap:wrap"><div><div class="mlabel">Calculado</div><b>${fmt(calc)}</b></div><div><div class="mlabel">Saldo real</div><b>${fmt(c.real)}</b></div><div><div class="mlabel">Diferença</div><b style="color:${dif===0?'var(--positive)':'var(--danger)'}">${fmt(dif)}</b></div></div><div style="display:flex;gap:6px"><button class="btn btn-b" onclick="atualizarSaldoReal(${i})">Conciliar</button><button class="btn btn-r" onclick="delConta(${i})">🗑</button></div></div></div>`;}).join('');
+  const snaps=fechamentos.filter(f=>Number.isFinite(f.patrimonio)).sort((a,b)=>a.mes.localeCompare(b.mes));if(hist)hist.innerHTML=snaps.length?'<div style="overflow-x:auto"><table><thead><tr><th>Mês</th><th>Patrimônio líquido</th><th>Variação</th></tr></thead><tbody>'+snaps.map((f,i)=>{const ant=snaps[i-1]?.patrimonio,dif=ant==null?null:f.patrimonio-ant;return`<tr><td>${f.mes.split('-').reverse().join('/')}</td><td style="font-weight:700">${fmt(f.patrimonio)}</td><td style="color:${dif==null?'var(--muted)':dif>=0?'var(--positive)':'var(--danger)'}">${dif==null?'—':(dif>=0?'+ ':'')+fmt(dif)}</td></tr>`;}).join('')+'</tbody></table></div>':'<div class="empty">Feche um mês para criar o primeiro histórico.</div>';
 }
 
 function mesFechado(ym){return fechamentos.some(f=>f.mes===ym);}
@@ -1629,7 +1658,11 @@ function podeAlterarMes(ym){if(!mesFechado(ym))return true;toast(`O mês ${ym.sp
 function toggleFechamentoMes(){
   const pos=fechamentos.findIndex(f=>f.mes===mesSel);
   if(pos>=0){if(!confirm('Reabrir este mês para permitir alterações?'))return;fechamentos.splice(pos,1);toast('Mês reaberto.');}
-  else{if(!confirm('Fechar este mês? Os registros ficarão bloqueados contra alterações acidentais.'))return;fechamentos.push({mes:mesSel,fechadoEm:new Date().toISOString(),saldo:saldoAcumuladoAte(mesSel)});toast('✓ Mês fechado.');}
+  else{
+    const contasPend=agendados.filter(a=>a.venc?.startsWith(mesSel)&&totalPagoAgendado(a)<a.valor),faturasPend=cartoes.filter((c,i)=>{const total=parcelasNoMes().filter(p=>p.ccIdx===i).reduce((s,p)=>s+p.valorParc,0);return total>0&&totalPagoFatura(registroFatura(i))<total;}),divergencias=contas.filter(c=>Math.abs(c.real-saldoCalculadoConta(c.id))>.009);
+    const avisos=[];if(contasPend.length)avisos.push(`${contasPend.length} conta(s) pendente(s)`);if(faturasPend.length)avisos.push(`${faturasPend.length} fatura(s) não quitada(s)`);if(divergencias.length)avisos.push(`${divergencias.length} conta(s) bancária(s) divergente(s)`);
+    if(avisos.length&&!confirm(`Pendências encontradas:\n\n• ${avisos.join('\n• ')}\n\nDeseja fechar o mês mesmo assim?`))return;if(!avisos.length&&!confirm('Fechar este mês? Os registros ficarão bloqueados contra alterações acidentais.'))return;fechamentos.push({mes:mesSel,fechadoEm:new Date().toISOString(),saldo:saldoAcumuladoAte(mesSel),patrimonio:patrimonioAtual().liquido,pendencias:avisos});toast('✓ Mês fechado.');
+  }
   saveData();atualizarFechamentoUI();
 }
 function atualizarFechamentoUI(){
@@ -1657,7 +1690,7 @@ function downloadFile(content,nome,type){
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function exportBackup(nome){
-  const backup={app:'Akaccount',version:6,exportedAt:new Date().toISOString(),data:{cats,lancamentos,recorrentes,agendados,metas,investimentos,dividas,cartoes,debitos,faturas,objetivos,contas,transferencias,fechamentos}};
+  const backup={app:'Akaccount',version:7,exportedAt:new Date().toISOString(),data:{cats,lancamentos,recorrentes,agendados,metas,investimentos,dividas,cartoes,debitos,faturas,objetivos,contas,transferencias,fechamentos}};
   const pad=new Date().toISOString().slice(0,10);
   downloadFile(JSON.stringify(backup,null,2),nome||`akaccount_backup_${pad}.json`,'application/json;charset=utf-8');
 }
@@ -1680,8 +1713,8 @@ Object.assign(window,{
   loginGoogle,logout,loadDemo,clearAll,syncNow,
   showTab,showStab,abrirAcoesRapidas,abrirMais,fecharModal,irMenu,atalhoNovo,
   mesAnterior,mesProximo,irParaMes,irHoje,
-  addLanc,delLanc,editLanc,addRecorrente,toggleRecorrente,delRecorrente,updateRecCatSel,
-  addAgendado,pagarAgendado,reabrirAgendado,delAgendado,toggleAgendamentoFim,
+  addLanc,delLanc,editLanc,addRecorrente,toggleRecorrente,editRecorrente,delRecorrente,updateRecCatSel,
+  addAgendado,pagarAgendado,reabrirAgendado,editAgendado,delAgendado,toggleAgendamentoFim,
   addCat,delCat,atualizarOrcamento,
   addCartao,delCartao,addDebito,delDebito,editDebito,renderTodosDebitos,limparFiltrosDebitos,removerDebitoHistorico,fecharFatura,reabrirFatura,pagarFatura,
   addMeta,aporte,delMeta,
@@ -1689,6 +1722,7 @@ Object.assign(window,{
   addDivida,delDiv,
   addConta,atualizarSaldoReal,delConta,addTransferencia,toggleFechamentoMes,
   addObj,delObj,
+  renderBuscaGlobal,abrirResultadoBusca,
   exportCSV,exportBackup,importBackup,
   renderOrcCats,renderAlertas,renderGrafico,
 });
